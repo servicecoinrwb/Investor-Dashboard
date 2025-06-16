@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Service Coin Investor Dashboard</title>
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
 </head>
 <body class="bg-black text-white min-h-screen font-sans">
   <div class="max-w-4xl mx-auto p-6 space-y-8">
@@ -18,12 +19,12 @@
     <div class="bg-gray-800 rounded-xl p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
       <div>
         <h2 class="text-xl font-semibold">SREV Balance</h2>
-        <p class="text-2xl">0.00</p>
+        <p id="srev-balance" class="text-2xl">0.00</p>
         <p class="text-sm text-gray-400">Auto-yielding USDC receipt</p>
       </div>
       <div>
         <h2 class="text-xl font-semibold">LeaseToken_2025</h2>
-        <p class="text-2xl">0</p>
+        <p id="lease-count" class="text-2xl">0</p>
         <p class="text-sm text-gray-400">$12 redeemable after maturity</p>
       </div>
     </div>
@@ -39,16 +40,44 @@
   </div>
 
   <script>
-    if (window.ethereum) {
-      document.getElementById('wallet').innerText = 'Connecting...';
-      ethereum.request({ method: 'eth_requestAccounts' })
-        .then(accounts => {
-          document.getElementById('wallet').innerText = accounts[0];
-        })
-        .catch(() => {
+    const srevAbi = [
+      "function balanceOf(address owner) view returns (uint256)"
+    ];
+    const leaseAbi = [
+      "function balanceOf(address owner) view returns (uint256)"
+    ];
+
+    const srevAddress = "0x2f745da2fa453ee76c756fadcc081f59284b2a40";
+    const leaseTokenAddress = "0x057ba66c2109Fd4487F0781E0203B71fd77a6341";
+
+    async function init() {
+      if (typeof window.ethereum !== 'undefined') {
+        const provider = new ethers.providers.Web3Provider(window.ethereum);
+        const signer = provider.getSigner();
+
+        try {
+          await provider.send("eth_requestAccounts", []);
+          const address = await signer.getAddress();
+          document.getElementById('wallet').innerText = address;
+
+          const srevContract = new ethers.Contract(srevAddress, srevAbi, provider);
+          const srevBalance = await srevContract.balanceOf(address);
+          document.getElementById('srev-balance').innerText = (srevBalance / 1e18).toFixed(2);
+
+          const leaseContract = new ethers.Contract(leaseTokenAddress, leaseAbi, provider);
+          const leaseCount = await leaseContract.balanceOf(address);
+          document.getElementById('lease-count').innerText = leaseCount.toString();
+
+        } catch (err) {
+          console.error(err);
           document.getElementById('wallet').innerText = 'Connection failed';
-        });
+        }
+      } else {
+        document.getElementById('wallet').innerText = 'No Ethereum wallet found';
+      }
     }
+
+    window.addEventListener('load', init);
   </script>
 </body>
 </html>
