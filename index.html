@@ -5,47 +5,86 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Investor Dashboard</title>
   <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
-  <script defer src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    /* Custom styles for the notification toast */
+    #notification-toast {
+        position: fixed;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        transition: opacity 0.5s, transform 0.5s;
+        opacity: 0;
+        pointer-events: none;
+        z-index: 100;
+    }
+    #notification-toast.show {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+        pointer-events: auto;
+    }
+  </style>
 </head>
 <body class="bg-black text-white font-sans">
   <div class="max-w-4xl mx-auto p-6">
     <h1 class="text-3xl font-bold mb-6">Investor Dashboard</h1>
-
-    <div class="bg-gray-800 p-4 rounded mb-4">
-      <p><strong>Wallet:</strong> <span id="wallet">-</span></p>
-      <p class="text-sm text-gray-400">View your verified holdings, staking receipts, and redemption timeline.</p>
+    
+    <!-- Container for wallet connection prompt -->
+    <div id="connect-wallet-container" class="text-center bg-gray-800 p-8 rounded-lg shadow-md">
+        <h2 class="text-2xl font-bold mb-4">Connect Your Wallet</h2>
+        <p id="wallet-instructions" class="text-gray-400 mb-6">Please connect your wallet to view the dashboard.</p>
+        <button id="connect-wallet-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg transition-colors text-lg">Connect Wallet</button>
     </div>
 
-    <div class="flex gap-4 mb-4">
-      <div class="bg-gray-800 p-4 rounded flex-1">
-        <p class="text-lg font-bold">SREV Balance</p>
-        <p id="srev-balance" class="text-2xl font-mono">0.00</p>
-        <p class="text-sm text-gray-400">Auto-yielding USDC receipt</p>
-      </div>
-      <div class="bg-gray-800 p-4 rounded flex-1">
-        <p class="text-lg font-bold">LeaseToken_2025</p>
-        <p id="lease-token" class="text-2xl font-mono">0</p>
-        <p class="text-sm text-gray-400">$12 redeemable after maturity</p>
-      </div>
-    </div>
+    <!-- Main dashboard content, hidden by default -->
+    <div id="dashboard-content" class="hidden">
+        <!-- Wallet Info -->
+        <div class="bg-gray-800 p-4 rounded-lg mb-4 shadow-md">
+          <p><strong>Wallet:</strong> <span id="wallet">-</span></p>
+          <p class="text-sm text-gray-400">View your verified holdings, staking receipts, and redemption timeline.</p>
+        </div>
 
-    <div class="bg-gray-800 p-4 rounded mb-4">
-      <p class="text-lg font-bold">USDC Yield Pool</p>
-      <p class="text-sm">Pool Balance: <span id="reward-pool">0.00 USDC</span></p>
-      <p class="text-sm">Your Pending Rewards: <span id="pending-rewards">0.00 USDC</span></p>
-    </div>
+        <!-- Balances -->
+        <div class="grid md:grid-cols-2 gap-4 mb-4">
+          <div class="bg-gray-800 p-4 rounded-lg shadow-md">
+            <p class="text-lg font-bold">SREV Balance</p>
+            <p id="srev-balance" class="text-2xl font-mono">0.00</p>
+            <p class="text-sm text-gray-400">Auto-yielding USDC receipt</p>
+          </div>
+          <div class="bg-gray-800 p-4 rounded-lg shadow-md">
+            <p class="text-lg font-bold">LeaseToken_2025</p>
+            <p id="lease-token" class="text-2xl font-mono">0</p>
+            <p class="text-sm text-gray-400">$12 redeemable after maturity</p>
+          </div>
+        </div>
 
-    <div class="flex flex-wrap gap-2">
-      <button id="claim" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">Claim Yield</button>
-      <button id="stake" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">Stake SRV</button>
-      <button id="unstake" class="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded">Unstake SRV</button>
-      <button id="redeemLeaseToken" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded">Redeem LeaseToken</button>
-      <button id="earlyRedeem" class="bg-white text-black font-bold py-2 px-4 rounded">Early Redeem</button>
-      <button id="buyLeaseToken" class="bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-2 px-4 rounded">Buy LeaseToken</button>
+        <!-- Yield Pool -->
+        <div class="bg-gray-800 p-4 rounded-lg mb-4 shadow-md">
+          <p class="text-lg font-bold">USDC Yield Pool</p>
+          <p class="text-sm">Pool Balance: <span id="reward-pool">0.00 USDC</span></p>
+          <p class="text-sm">Your Pending Rewards: <span id="pending-rewards">0.00 USDC</span></p>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="flex flex-wrap gap-2">
+          <button id="claim" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">Claim Yield</button>
+          <button id="stake" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">Stake SRV</button>
+          <button id="unstake" class="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded-lg transition-colors">Unstake SRV</button>
+          <button id="redeemLeaseToken" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">Redeem LeaseToken</button>
+          <button id="earlyRedeem" class="bg-white text-black font-bold py-2 px-4 rounded-lg transition-colors">Early Redeem</button>
+          <button id="buyLeaseToken" class="bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-2 px-4 rounded-lg transition-colors">Buy LeaseToken</button>
+        </div>
     </div>
   </div>
 
+  <!-- Notification Toast -->
+  <div id="notification-toast" class="px-4 py-2 rounded-lg shadow-lg text-white">
+      <span id="notification-message"></span>
+  </div>
+
+
   <script>
+    // --- ABIs and Contract Addresses ---
     const srevAbi = [{"constant":true,"inputs":[{"name":"owner","type":"address"}],"name":"balanceOf","outputs":[{"name":"","type":"uint256"}],"type":"function"}];
     const leaseBondAbi = [
       {"constant":true,"inputs":[{"name":"owner","type":"address"}],"name":"balanceOf","outputs":[{"name":"","type":"uint256"}],"type":"function"},
@@ -61,44 +100,144 @@
       "function allowance(address owner, address spender) view returns (uint256)"
     ];
 
-    const provider = new ethers.providers.Web3Provider(window.ethereum, "any");
-    let signer;
     const usdcAddress = "0xaf88d065e77c8cC2239327C5EDb3A432268e5831";
+    const srevAddress = "0x2F745Da2FA453ee76c756fADcc081f59284B2a40";
+    const leaseAddress = "0xd0dc6eeE2dD77d7A4C09108993d0c7ad6a0b60E3";
+    const rewardAddress = "0x71f618EFb0422687e5B2ad9cD973aDACb645D9DE";
 
-    async function init() {
-      await provider.send("eth_requestAccounts", []);
-      signer = provider.getSigner();
-      const user = await signer.getAddress();
-      document.getElementById("wallet").innerText = user;
+    // --- Ethers.js Setup ---
+    let provider;
+    let signer;
 
-      const srev = new ethers.Contract("0x2F745Da2FA453ee76c756fADcc081f59284B2a40", srevAbi, provider);
-      const lease = new ethers.Contract("0xd0dc6eeE2dD77d7A4C09108993d0c7ad6a0b60E3", leaseBondAbi, provider);
-      const reward = new ethers.Contract("0x71f618EFb0422687e5B2ad9cD973aDACb645D9DE", rewardAbi, provider);
+    // --- UI Elements ---
+    const walletEl = document.getElementById("wallet");
+    const srevBalanceEl = document.getElementById("srev-balance");
+    const leaseTokenEl = document.getElementById("lease-token");
+    const rewardPoolEl = document.getElementById("reward-pool");
+    const pendingRewardsEl = document.getElementById("pending-rewards");
+    const notificationToast = document.getElementById('notification-toast');
+    const notificationMessage = document.getElementById('notification-message');
+    const connectWalletContainer = document.getElementById('connect-wallet-container');
+    const connectWalletBtn = document.getElementById('connect-wallet-btn');
+    const walletInstructions = document.getElementById('wallet-instructions');
+    const dashboardContent = document.getElementById('dashboard-content');
 
-      const srevBal = await srev.balanceOf(user);
-      document.getElementById("srev-balance").innerText = (srevBal / 1e18).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
 
-      const leaseBal = await lease.balanceOf(user);
-      document.getElementById("lease-token").innerText = leaseBal.toString();
-
-      const pool = await reward.viewRewardPoolBalance();
-      const pending = await reward.viewPending(user);
-      document.getElementById("reward-pool").innerText = (pool / 1e6).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) + " USDC";
-      document.getElementById("pending-rewards").innerText = (pending / 1e6).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) + " USDC";
+    /**
+     * Shows a notification message at the bottom of the screen.
+     */
+    function showNotification(message, isError = false) {
+        notificationMessage.textContent = message;
+        notificationToast.className = `px-4 py-2 rounded-lg shadow-lg text-white ${isError ? 'bg-red-600' : 'bg-gray-700'}`;
+        notificationToast.classList.add('show');
+        
+        setTimeout(() => {
+            notificationToast.classList.remove('show');
+        }, 3000);
     }
 
-    window.addEventListener("load", init);
+    /**
+     * Connects to the wallet, fetches data and populates the dashboard.
+     */
+    async function connectAndLoadDashboard() {
+      try {
+        provider = new ethers.providers.Web3Provider(window.ethereum, "any");
 
-    document.getElementById("buyLeaseToken").addEventListener("click", async () => {
-      if (!signer) return alert("Connect wallet first");
-      const leaseBond = new ethers.Contract("0xd0dc6eeE2dD77d7A4C09108993d0c7ad6a0b60E3", leaseBondAbi, signer);
-      const amount = prompt("Enter amount of USDC to spend:");
-      if (!amount || isNaN(amount)) return;
-      const usdc = new ethers.Contract(usdcAddress, erc20Abi, signer);
-      await usdc.approve(leaseBond.address, ethers.utils.parseUnits(amount, 6));
-      await leaseBond.buy(ethers.utils.parseUnits(amount, 6));
-      alert("Lease token purchased!");
+        await provider.send("eth_requestAccounts", []);
+        signer = provider.getSigner();
+        const user = await signer.getAddress();
+        walletEl.innerText = `${user.substring(0, 6)}...${user.substring(user.length - 4)}`;
+
+        const srev = new ethers.Contract(srevAddress, srevAbi, provider);
+        const lease = new ethers.Contract(leaseAddress, leaseBondAbi, provider);
+        const reward = new ethers.Contract(rewardAddress, rewardAbi, provider);
+
+        // Fetch and display balances
+        const [srevBal, leaseBal, pool, pending] = await Promise.all([
+            srev.balanceOf(user),
+            lease.balanceOf(user),
+            reward.viewRewardPoolBalance(),
+            reward.viewPending(user)
+        ]);
+        
+        const formattedSrev = parseFloat(ethers.utils.formatUnits(srevBal, 18));
+        srevBalanceEl.innerText = formattedSrev.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+
+        leaseTokenEl.innerText = leaseBal.toString();
+
+        const formattedPool = parseFloat(ethers.utils.formatUnits(pool, 6));
+        rewardPoolEl.innerText = formattedPool.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) + " USDC";
+        
+        const formattedPending = parseFloat(ethers.utils.formatUnits(pending, 6));
+        pendingRewardsEl.innerText = formattedPending.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) + " USDC";
+
+        // Show dashboard and hide connect prompt
+        connectWalletContainer.classList.add('hidden');
+        dashboardContent.classList.remove('hidden');
+
+      } catch (error) {
+        console.error("Connection/data fetch failed:", error);
+        showNotification("Failed to connect to wallet or fetch data.", true);
+      }
+    }
+    
+    // --- Event Listeners Setup ---
+    window.addEventListener("load", () => {
+        // This is the primary click listener for connecting the wallet.
+        connectWalletBtn.addEventListener('click', () => {
+            // FIX: Check for the wallet provider *when the user clicks*, not on page load.
+            if (typeof window.ethereum !== 'undefined') {
+                // If the wallet is found, proceed with connection.
+                connectAndLoadDashboard();
+            } else {
+                // If no wallet is found, guide the user to install one.
+                showNotification("No wallet detected. Please install MetaMask.", true);
+                walletInstructions.textContent = "No web3 wallet detected. Please install a wallet like MetaMask to continue.";
+                connectWalletBtn.textContent = "Install MetaMask";
+                // Change the button's behavior to open the installation link.
+                connectWalletBtn.onclick = () => {
+                    window.open("https://metamask.io/download/", "_blank");
+                };
+            }
+        });
+
+        // Add the click listener for the "Buy LeaseToken" button
+        document.getElementById("buyLeaseToken").addEventListener("click", async () => {
+          if (!signer) {
+            showNotification("Please connect your wallet first.", true);
+            return;
+          }
+
+          const amount = prompt("Enter amount of USDC to spend:");
+          if (!amount || isNaN(amount) || parseFloat(amount) <= 0) {
+            if (amount !== null) {
+                showNotification("Invalid amount entered.", true);
+            }
+            return;
+          }
+          
+          try {
+              const leaseBond = new ethers.Contract(leaseAddress, leaseBondAbi, signer);
+              const usdc = new ethers.Contract(usdcAddress, erc20Abi, signer);
+
+              showNotification("Approving USDC spend...");
+              const txApprove = await usdc.approve(leaseBond.address, ethers.utils.parseUnits(amount, 6));
+              await txApprove.wait(); 
+              
+              showNotification("Processing purchase...");
+              const txBuy = await leaseBond.buy(ethers.utils.parseUnits(amount, 6));
+              await txBuy.wait();
+
+              showNotification("Lease token purchased successfully!");
+              // Re-fetch data after purchase
+              connectAndLoadDashboard(); 
+          } catch (error) {
+              console.error("Purchase failed:", error);
+              showNotification(error.reason || "Purchase transaction failed.", true);
+          }
+        });
     });
+
   </script>
 </body>
 </html>
