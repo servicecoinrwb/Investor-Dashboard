@@ -168,7 +168,8 @@
         const formattedPool = parseFloat(ethers.utils.formatUnits(pool, 6));
         rewardPoolEl.innerText = formattedPool.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) + " USDC";
         
-        const formattedPending = parseFloat(ethers.utils.formatUnits(pending, 6));
+        // FIX: The contract likely returns pending rewards in 18-decimal precision.
+        const formattedPending = parseFloat(ethers.utils.formatUnits(pending, 18));
         pendingRewardsEl.innerText = formattedPending.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) + " USDC";
 
         // Show dashboard and hide connect prompt
@@ -185,7 +186,7 @@
     window.addEventListener("load", () => {
         // This is the primary click listener for connecting the wallet.
         connectWalletBtn.addEventListener('click', () => {
-            // FIX: Check for the wallet provider *when the user clicks*, not on page load.
+            // Check for the wallet provider *when the user clicks*, not on page load.
             if (typeof window.ethereum !== 'undefined') {
                 // If the wallet is found, proceed with connection.
                 connectAndLoadDashboard();
