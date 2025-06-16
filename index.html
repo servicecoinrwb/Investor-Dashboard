@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Investor Dashboard</title>
+  <title>Service Coin Ecosystem Hub</title>
   <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
@@ -27,7 +27,7 @@
 </head>
 <body class="bg-black text-white font-sans">
   <div class="max-w-4xl mx-auto p-6">
-    <h1 class="text-3xl font-bold mb-6">Investor Dashboard</h1>
+    <h1 class="text-3xl font-bold mb-6">Service Coin Ecosystem Hub</h1>
     
     <!-- Container for wallet connection prompt -->
     <div id="connect-wallet-container" class="text-center bg-gray-800 p-8 rounded-lg shadow-md">
@@ -45,7 +45,7 @@
         </div>
 
         <!-- Balances -->
-        <div class="grid md:grid-cols-2 gap-4 mb-4">
+        <div class="grid md:grid-cols-3 gap-4 mb-4">
           <div class="bg-gray-800 p-4 rounded-lg shadow-md">
             <p class="text-lg font-bold">SREV Balance</p>
             <p id="srev-balance" class="text-2xl font-mono">0.00</p>
@@ -54,20 +54,49 @@
           <div class="bg-gray-800 p-4 rounded-lg shadow-md">
             <p class="text-lg font-bold">LeaseToken_2025</p>
             <p id="lease-token" class="text-2xl font-mono">0</p>
-            <p class="text-sm text-gray-400">$10 Buy 10.80 Early Redeem $12 redeemable after maturity</p>
+            <p class="text-sm text-gray-400">$12 redeemable after maturity</p>
+          </div>
+           <div class="bg-gray-800 p-4 rounded-lg shadow-md">
+            <p class="text-lg font-bold">Vault Claimable Yield</p>
+            <p id="vault-claimable-yield" class="text-2xl font-mono">0.00</p>
+            <p class="text-sm text-gray-400">USDC earned in vault</p>
           </div>
         </div>
 
         <!-- Yield Pool -->
         <div class="bg-gray-800 p-4 rounded-lg mb-4 shadow-md">
-          <p class="text-lg font-bold">USDC Yield Pool</p>
+          <p class="text-lg font-bold">Staking Yield Pool</p>
           <p class="text-sm">Pool Balance: <span id="reward-pool">0.00 USDC</span></p>
           <p class="text-sm">Your Pending Rewards: <span id="pending-rewards">0.00 USDC</span></p>
         </div>
+        
+        <!-- Investor Vault Actions -->
+        <div class="bg-gray-800 p-4 rounded-lg mb-4 shadow-md">
+            <h3 class="text-xl font-bold mb-4">Investor Vault Actions</h3>
+            
+            <!-- Deposit Section -->
+            <div class="mb-6 border-b border-gray-700 pb-6">
+                <label for="deposit-amount" class="block text-sm font-medium text-gray-300 mb-2">Deposit USDC to Investor Vault</label>
+                <div class="flex flex-col sm:flex-row gap-2">
+                    <input type="text" id="deposit-amount" placeholder="USDC Amount" class="bg-gray-900 border border-gray-700 text-white rounded-lg p-2 flex-grow focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                    <button id="approve-deposit-btn" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">Approve</button>
+                    <button id="deposit-btn" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg transition-colors opacity-50 cursor-not-allowed" disabled>Deposit</button>
+                </div>
+                <p class="text-xs text-gray-500 mt-2">First approve, then deposit.</p>
+            </div>
+    
+            <!-- Other Actions -->
+            <div class="flex flex-wrap gap-2">
+                <button id="vault-claim-yield-btn" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">Claim Yield</button>
+                <button id="vault-compound-yield-btn" class="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded-lg transition-colors">Compound Yield</button>
+                <button id="vault-withdraw-all-btn" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">Withdraw All</button>
+            </div>
+        </div>
 
-        <!-- Action Buttons -->
+
+        <!-- Existing Action Buttons -->
         <div class="flex flex-wrap gap-2">
-          <button id="claim" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">Claim Yield</button>
+          <button id="claim" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">Claim Yield (Staking)</button>
           <button id="stake" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">Stake SRV</button>
           <button id="unstake" class="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded-lg transition-colors">Unstake SRV</button>
           <button id="redeemLeaseToken" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">Redeem LeaseToken</button>
@@ -99,11 +128,15 @@
       "function balanceOf(address owner) view returns (uint256)",
       "function allowance(address owner, address spender) view returns (uint256)"
     ];
+    // FIX: Updated Investor Vault ABI
+    const investorVaultAbi = [{"inputs":[{"internalType":"address","name":"_usdc","type":"address"}],"stateMutability":"nonpayable","type":"constructor"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"investor","type":"address"},{"indexed":false,"internalType":"uint256","name":"amount","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"sharesMinted","type":"uint256"}],"name":"Deposited","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"oldKernel","type":"address"},{"indexed":true,"internalType":"address","name":"newKernel","type":"address"}],"name":"KernelUpdated","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"previousOwner","type":"address"},{"indexed":true,"internalType":"address","name":"newOwner","type":"address"}],"name":"OwnershipTransferred","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"investor","type":"address"},{"indexed":false,"internalType":"uint256","name":"amount","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"sharesBurned","type":"uint256"}],"name":"Withdrawn","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"investor","type":"address"},{"indexed":false,"internalType":"uint256","name":"amount","type":"uint256"}],"name":"YieldClaimed","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"investor","type":"address"},{"indexed":false,"internalType":"uint256","name":"amount","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"newShares","type":"uint256"}],"name":"YieldCompounded","type":"event"},{"inputs":[],"name":"LOCKUP_PERIOD","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address[]","name":"investors","type":"address[]"}],"name":"batchClaimYield","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address[]","name":"investors","type":"address[]"}],"name":"batchWithdraw","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"claimYield","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"investor","type":"address"}],"name":"claimableYield","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"","type":"address"}],"name":"claimedYield","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"compoundYield","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"deposit","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"","type":"address"}],"name":"depositTimestamps","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"fundKernel","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"investor","type":"address"}],"name":"getInvestorInfo","outputs":[{"internalType":"uint256","name":"share","type":"uint256"},{"internalType":"uint256","name":"claimable","type":"uint256"},{"internalType":"uint256","name":"claimed","type":"uint256"},{"internalType":"uint256","name":"unlockTime","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"getVaultTotals","outputs":[{"internalType":"uint256","name":"totalUSDC","type":"uint256"},{"internalType":"uint256","name":"totalSharesMinted","type":"uint256"},{"internalType":"uint256","name":"totalYield","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"kernel","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"owner","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"receiveYield","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"renounceOwnership","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"_kernel","type":"address"}],"name":"setKernel","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"","type":"address"}],"name":"shares","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"totalDeposits","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"totalShares","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"totalYieldDistributed","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"newOwner","type":"address"}],"name":"transferOwnership","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"usdc","outputs":[{"internalType":"contract IERC20","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"shareAmount","type":"uint256"}],"name":"withdraw","outputs":[],"stateMutability":"nonpayable","type":"function"}];
 
     const usdcAddress = "0xaf88d065e77c8cC2239327C5EDb3A432268e5831";
     const srevAddress = "0x2F745Da2FA453ee76c756fADcc081f59284B2a40";
     const leaseAddress = "0xd0dc6eeE2dD77d7A4C09108993d0c7ad6a0b60E3";
     const rewardAddress = "0x71f618EFb0422687e5B2ad9cD973aDACb645D9DE";
+    // FIX: Updated Investor Vault Address
+    const investorVaultAddress = "0x1a51f1966d35661573908DC913307076d937aa90"; 
 
     // --- Ethers.js Setup ---
     let provider;
@@ -121,6 +154,15 @@
     const connectWalletBtn = document.getElementById('connect-wallet-btn');
     const walletInstructions = document.getElementById('wallet-instructions');
     const dashboardContent = document.getElementById('dashboard-content');
+    const vaultClaimableYieldEl = document.getElementById('vault-claimable-yield');
+
+    // UI Elements for Investor Vault
+    const depositAmountInput = document.getElementById('deposit-amount');
+    const approveDepositBtn = document.getElementById('approve-deposit-btn');
+    const depositBtn = document.getElementById('deposit-btn');
+    const vaultClaimYieldBtn = document.getElementById('vault-claim-yield-btn');
+    const vaultCompoundYieldBtn = document.getElementById('vault-compound-yield-btn');
+    const vaultWithdrawAllBtn = document.getElementById('vault-withdraw-all-btn');
 
 
     /**
@@ -151,13 +193,15 @@
         const srev = new ethers.Contract(srevAddress, srevAbi, provider);
         const lease = new ethers.Contract(leaseAddress, leaseBondAbi, provider);
         const reward = new ethers.Contract(rewardAddress, rewardAbi, provider);
+        const vault = new ethers.Contract(investorVaultAddress, investorVaultAbi, provider);
 
         // Fetch and display balances
-        const [srevBal, leaseBal, pool, pending] = await Promise.all([
+        const [srevBal, leaseBal, pool, pending, vaultYield] = await Promise.all([
             srev.balanceOf(user),
             lease.balanceOf(user),
             reward.viewRewardPoolBalance(),
-            reward.viewPending(user)
+            reward.viewPending(user),
+            vault.claimableYield(user)
         ]);
         
         const formattedSrev = parseFloat(ethers.utils.formatUnits(srevBal, 18));
@@ -168,9 +212,13 @@
         const formattedPool = parseFloat(ethers.utils.formatUnits(pool, 6));
         rewardPoolEl.innerText = formattedPool.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) + " USDC";
         
-        // FIX: The contract likely returns pending rewards in 18-decimal precision.
         const formattedPending = parseFloat(ethers.utils.formatUnits(pending, 18));
         pendingRewardsEl.innerText = formattedPending.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) + " USDC";
+        
+        // FIX: Display claimable vault yield, assuming 6 decimals for USDC
+        const formattedVaultYield = parseFloat(ethers.utils.formatUnits(vaultYield, 6));
+        vaultClaimableYieldEl.innerText = formattedVaultYield.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+
 
         // Show dashboard and hide connect prompt
         connectWalletContainer.classList.add('hidden');
@@ -186,21 +234,115 @@
     window.addEventListener("load", () => {
         // This is the primary click listener for connecting the wallet.
         connectWalletBtn.addEventListener('click', () => {
-            // Check for the wallet provider *when the user clicks*, not on page load.
             if (typeof window.ethereum !== 'undefined') {
-                // If the wallet is found, proceed with connection.
                 connectAndLoadDashboard();
             } else {
-                // If no wallet is found, guide the user to install one.
                 showNotification("No wallet detected. Please install MetaMask.", true);
                 walletInstructions.textContent = "No web3 wallet detected. Please install a wallet like MetaMask to continue.";
                 connectWalletBtn.textContent = "Install MetaMask";
-                // Change the button's behavior to open the installation link.
                 connectWalletBtn.onclick = () => {
                     window.open("https://metamask.io/download/", "_blank");
                 };
             }
         });
+
+        // --- Investor Vault Listeners ---
+        
+        // Disable deposit button if amount changes, requiring re-approval
+        depositAmountInput.addEventListener('input', () => {
+            depositBtn.disabled = true;
+            depositBtn.classList.add('opacity-50', 'cursor-not-allowed');
+        });
+
+        approveDepositBtn.addEventListener('click', async () => {
+            if (!signer) return showNotification("Please connect your wallet first.", true);
+            const amount = depositAmountInput.value;
+            if (!amount || isNaN(amount) || parseFloat(amount) <= 0) {
+                return showNotification("Please enter a valid amount.", true);
+            }
+
+            try {
+                const usdc = new ethers.Contract(usdcAddress, erc20Abi, signer);
+                showNotification("Approving USDC spend...");
+                const tx = await usdc.approve(investorVaultAddress, ethers.utils.parseUnits(amount, 6));
+                await tx.wait();
+                showNotification("Approval successful! You can now deposit.", false);
+                depositBtn.disabled = false;
+                depositBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+            } catch (error) {
+                console.error("Approval failed:", error);
+                showNotification(error.reason || "Approval failed.", true);
+            }
+        });
+
+        depositBtn.addEventListener('click', async () => {
+            if (!signer) return showNotification("Please connect your wallet first.", true);
+            const amount = depositAmountInput.value;
+            if (!amount || isNaN(amount) || parseFloat(amount) <= 0) {
+                return showNotification("Please enter a valid amount.", true);
+            }
+            
+            try {
+                const vault = new ethers.Contract(investorVaultAddress, investorVaultAbi, signer);
+                showNotification("Depositing USDC...");
+                const tx = await vault.deposit(ethers.utils.parseUnits(amount, 6));
+                await tx.wait();
+                showNotification("Deposit successful!", false);
+                depositAmountInput.value = ""; // Clear input
+                depositBtn.disabled = true; // Disable button after deposit
+                depositBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                connectAndLoadDashboard(); // Refresh data
+            } catch(error) {
+                console.error("Deposit failed:", error);
+                showNotification(error.reason || "Deposit failed.", true);
+            }
+        });
+
+        vaultClaimYieldBtn.addEventListener('click', async () => {
+            if (!signer) return showNotification("Please connect your wallet first.", true);
+             try {
+                const vault = new ethers.Contract(investorVaultAddress, investorVaultAbi, signer);
+                showNotification("Claiming yield...");
+                const tx = await vault.claimYield();
+                await tx.wait();
+                showNotification("Yield claimed!", false);
+                connectAndLoadDashboard(); // Refresh data
+            } catch(error) {
+                console.error("Claim failed:", error);
+                showNotification(error.reason || "Claim failed.", true);
+            }
+        });
+
+        vaultCompoundYieldBtn.addEventListener('click', async () => {
+            if (!signer) return showNotification("Please connect your wallet first.", true);
+             try {
+                const vault = new ethers.Contract(investorVaultAddress, investorVaultAbi, signer);
+                showNotification("Compounding yield...");
+                const tx = await vault.compoundYield();
+                await tx.wait();
+                showNotification("Yield compounded!", false);
+                connectAndLoadDashboard(); // Refresh data
+            } catch(error) {
+                console.error("Compound failed:", error);
+                showNotification(error.reason || "Compound failed.", true);
+            }
+        });
+
+        vaultWithdrawAllBtn.addEventListener('click', async () => {
+            if (!signer) return showNotification("Please connect your wallet first.", true);
+             try {
+                const vault = new ethers.Contract(investorVaultAddress, investorVaultAbi, signer);
+                showNotification("Withdrawing all funds...");
+                const tx = await vault.withdrawAll(); // Note: The ABI shows withdraw(shareAmount), not withdrawAll()
+                await tx.wait();
+                showNotification("Withdrawal successful!", false);
+                connectAndLoadDashboard(); // Refresh data
+            } catch(error) {
+                console.error("Withdrawal failed:", error);
+                showNotification(error.reason || "Withdrawal failed. Check contract ABI.", true);
+            }
+        });
+
 
         // Add the click listener for the "Buy LeaseToken" button
         document.getElementById("buyLeaseToken").addEventListener("click", async () => {
