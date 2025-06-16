@@ -29,22 +29,18 @@
   <div class="max-w-4xl mx-auto p-6">
     <h1 class="text-3xl font-bold mb-6">Service Coin Ecosystem</h1>
     
-    <!-- Container for wallet connection prompt -->
     <div id="connect-wallet-container" class="text-center bg-gray-800 p-8 rounded-lg shadow-md">
         <h2 class="text-2xl font-bold mb-4">Connect Your Wallet</h2>
         <p id="wallet-instructions" class="text-gray-400 mb-6">Please connect your wallet to view the dashboard.</p>
         <button id="connect-wallet-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg transition-colors text-lg">Connect Wallet</button>
     </div>
 
-    <!-- Main dashboard content, hidden by default -->
     <div id="dashboard-content" class="hidden">
-        <!-- Wallet Info -->
         <div class="bg-gray-800 p-4 rounded-lg mb-4 shadow-md">
           <p><strong>Wallet:</strong> <span id="wallet">-</span></p>
           <p class="text-sm text-gray-400">View your verified holdings, staking receipts, and redemption timeline.</p>
         </div>
 
-        <!-- Balances -->
         <div class="grid md:grid-cols-3 gap-4 mb-4">
           <div class="bg-gray-800 p-4 rounded-lg shadow-md">
             <p class="text-lg font-bold">SREV Balance</p>
@@ -63,14 +59,35 @@
           </div>
         </div>
 
-        <!-- Yield Pool -->
+        <div class="bg-gray-800 p-4 rounded-lg mb-4 shadow-md">
+            <h3 class="text-xl font-bold mb-4">Platform Totals</h3>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+                <div>
+                    <p class="text-sm text-gray-400">Investor Vault Balance</p>
+                    <p id="platform-investor-vault-balance" class="text-lg font-mono">$0.00</p>
+                </div>
+                <div>
+                    <p class="text-sm text-gray-400">Total Capital Deposited</p>
+                    <p id="platform-total-deposited" class="text-lg font-mono">$0.00</p>
+                </div>
+                <div>
+                    <p class="text-sm text-gray-400">Yield Vault Balance</p>
+                    <p id="platform-yield-vault-balance" class="text-lg font-mono">$0.00</p>
+                </div>
+                <div>
+                    <p class="text-sm text-gray-400">Total Fees Processed</p>
+                    <p id="platform-total-fees" class="text-lg font-mono">$0.00</p>
+                </div>
+            </div>
+        </div>
+
+
         <div class="bg-gray-800 p-4 rounded-lg mb-4 shadow-md">
           <p class="text-lg font-bold">Staking Yield Pool</p>
           <p class="text-sm">Pool Balance: <span id="reward-pool">0.00 USDC</span></p>
           <p class="text-sm">Your Pending Rewards: <span id="pending-rewards">0.00 USDC</span></p>
         </div>
 
-        <!-- Staking and LeaseToken Actions -->
         <div class="bg-gray-800 p-4 rounded-lg mb-4 shadow-md">
             <h3 class="text-xl font-bold mb-4">SRV Staking & PFLOW25</h3>
             <div class="flex flex-wrap gap-2">
@@ -83,11 +100,9 @@
             </div>
         </div>
         
-        <!-- Investor Vault Actions -->
         <div class="bg-gray-800 p-4 rounded-lg mb-4 shadow-md">
             <h3 class="text-xl font-bold mb-4">Real Yield System</h3>
             
-            <!-- Deposit Section -->
             <div class="mb-6 border-b border-gray-700 pb-6">
                 <label for="deposit-amount" class="block text-sm font-medium text-gray-300 mb-2">Deposit USDC to Real Yield System</label>
                 <div class="flex flex-col sm:flex-row gap-2">
@@ -98,7 +113,6 @@
                 <p class="text-xs text-gray-500 mt-2">First approve, then deposit.</p>
             </div>
     
-            <!-- Other Actions -->
             <div class="flex flex-wrap gap-2">
                 <button id="vault-claim-yield-btn" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">Claim Yield</button>
                 <button id="vault-compound-yield-btn" class="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded-lg transition-colors">Compound Yield</button>
@@ -108,7 +122,6 @@
     </div>
   </div>
 
-  <!-- Notification Toast -->
   <div id="notification-toast" class="px-4 py-2 rounded-lg shadow-lg text-white">
       <span id="notification-message"></span>
   </div>
@@ -118,20 +131,18 @@
     document.addEventListener("DOMContentLoaded", () => {
         // --- ABIs and Contract Addresses ---
         const srevAbi = [{"constant":true,"inputs":[{"name":"owner","type":"address"}],"name":"balanceOf","outputs":[{"name":"","type":"uint256"}],"type":"function"}];
-        // FIX: Added more functions to the leaseBondAbi based on button names
         const leaseBondAbi = [
           {"constant":true,"inputs":[{"name":"owner","type":"address"}],"name":"balanceOf","outputs":[{"name":"","type":"uint256"}],"type":"function"},
           {"inputs":[{"name":"amount","type":"uint256"}],"name":"buy","outputs":[],"stateMutability":"nonpayable","type":"function"},
-          {"inputs":[],"name":"redeem","outputs":[],"stateMutability":"nonpayable","type":"function"}, // Assumed function
-          {"inputs":[],"name":"earlyRedeem","outputs":[],"stateMutability":"nonpayable","type":"function"} // Assumed function
+          {"inputs":[],"name":"redeem","outputs":[],"stateMutability":"nonpayable","type":"function"},
+          {"inputs":[],"name":"earlyRedeem","outputs":[],"stateMutability":"nonpayable","type":"function"}
         ];
-        // FIX: Added a "claim" function to the staking rewards ABI
         const rewardAbi = [
           {"inputs":[],"name":"viewRewardPoolBalance","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
           {"inputs":[{"internalType":"address","name":"account","type":"address"}],"name":"viewPending","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
-          {"inputs":[],"name":"claim","outputs":[],"stateMutability":"nonpayable","type":"function"}, // Assumed function
-          {"inputs":[{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"stake","outputs":[],"stateMutability":"nonpayable","type":"function"}, // Assumed function
-          {"inputs":[{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"unstake","outputs":[],"stateMutability":"nonpayable","type":"function"} // Assumed function
+          {"inputs":[],"name":"claim","outputs":[],"stateMutability":"nonpayable","type":"function"},
+          {"inputs":[{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"stake","outputs":[],"stateMutability":"nonpayable","type":"function"},
+          {"inputs":[{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"unstake","outputs":[],"stateMutability":"nonpayable","type":"function"}
         ];
         const erc20Abi = [
           "function approve(address spender, uint256 amount) external returns (bool)",
@@ -139,12 +150,14 @@
           "function allowance(address owner, address spender) view returns (uint256)"
         ];
         const investorVaultAbi = [{"inputs":[{"internalType":"address","name":"_usdc","type":"address"}],"stateMutability":"nonpayable","type":"constructor"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"investor","type":"address"},{"indexed":false,"internalType":"uint256","name":"amount","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"sharesMinted","type":"uint256"}],"name":"Deposited","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"oldKernel","type":"address"},{"indexed":true,"internalType":"address","name":"newKernel","type":"address"}],"name":"KernelUpdated","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"previousOwner","type":"address"},{"indexed":true,"internalType":"address","name":"newOwner","type":"address"}],"name":"OwnershipTransferred","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"investor","type":"address"},{"indexed":false,"internalType":"uint256","name":"amount","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"sharesBurned","type":"uint256"}],"name":"Withdrawn","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"investor","type":"address"},{"indexed":false,"internalType":"uint256","name":"amount","type":"uint256"}],"name":"YieldClaimed","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"investor","type":"address"},{"indexed":false,"internalType":"uint256","name":"amount","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"newShares","type":"uint256"}],"name":"YieldCompounded","type":"event"},{"inputs":[],"name":"LOCKUP_PERIOD","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address[]","name":"investors","type":"address[]"}],"name":"batchClaimYield","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address[]","name":"investors","type":"address[]"}],"name":"batchWithdraw","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"claimYield","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"investor","type":"address"}],"name":"claimableYield","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"","type":"address"}],"name":"claimedYield","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"compoundYield","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"deposit","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"","type":"address"}],"name":"depositTimestamps","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"fundKernel","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"investor","type":"address"}],"name":"getInvestorInfo","outputs":[{"internalType":"uint256","name":"share","type":"uint256"},{"internalType":"uint256","name":"claimable","type":"uint256"},{"internalType":"uint256","name":"claimed","type":"uint256"},{"internalType":"uint256","name":"unlockTime","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"getVaultTotals","outputs":[{"internalType":"uint256","name":"totalUSDC","type":"uint256"},{"internalType":"uint256","name":"totalSharesMinted","type":"uint256"},{"internalType":"uint256","name":"totalYield","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"kernel","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"owner","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"receiveYield","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"renounceOwnership","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"_kernel","type":"address"}],"name":"setKernel","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"","type":"address"}],"name":"shares","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"totalDeposits","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"totalShares","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"totalYieldDistributed","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"newOwner","type":"address"}],"name":"transferOwnership","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"usdc","outputs":[{"internalType":"contract IERC20","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"shareAmount","type":"uint256"}],"name":"withdraw","outputs":[],"stateMutability":"nonpayable","type":"function"}];
+        const yieldVaultAbi = [{"inputs":[{"internalType":"address","name":"_governance","type":"address"},{"internalType":"address","name":"_kernel","type":"address"},{"internalType":"address","name":"_feeToken","type":"address"},{"internalType":"address","name":"_daoTreasury","type":"address"}],"stateMutability":"nonpayable","type":"constructor"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"oldTreasury","type":"address"},{"indexed":true,"internalType":"address","name":"newTreasury","type":"address"}],"name":"DaoTreasuryUpdated","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"fromKernel","type":"address"},{"indexed":false,"internalType":"uint256","name":"amount","type":"uint256"}],"name":"FeesDepositedInVault","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"treasury","type":"address"},{"indexed":false,"internalType":"uint256","name":"amount","type":"uint256"}],"name":"FeesSweptToTreasury","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"oldKernel","type":"address"},{"indexed":true,"internalType":"address","name":"newKernel","type":"address"}],"name":"KernelAddressUpdated","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"previousOwner","type":"address"},{"indexed":true,"internalType":"address","name":"newOwner","type":"address"}],"name":"OwnershipTransferred","type":"event"},{"inputs":[],"name":"daoTreasury","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"feeToken","outputs":[{"internalType":"contract IERC20","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"getTotalFeesAccumulatedInVault","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"getVaultBalance","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"kernelAddress","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"owner","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"_amount","type":"uint256"}],"name":"recordFeeDeposit","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"renounceOwnership","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"_newTreasury","type":"address"}],"name":"setDaoTreasury","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"_newKernel","type":"address"}],"name":"setKernelAddress","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"sweepFullBalanceToTreasury","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"uint256","name":"_amount","type":"uint256"}],"name":"sweepToTreasury","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"totalFeesAccumulatedInVault","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"newOwner","type":"address"}],"name":"transferOwnership","outputs":[],"stateMutability":"nonpayable","type":"function"}];
 
         const usdcAddress = "0xaf88d065e77c8cC2239327C5EDb3A432268e5831";
         const srevAddress = "0x2F745Da2FA453ee76c756fADcc081f59284B2a40";
         const leaseAddress = "0xd0dc6eeE2dD77d7A4C09108993d0c7ad6a0b60E3";
         const rewardAddress = "0x71f618EFb0422687e5B2ad9cD973aDACb645D9DE";
-        const investorVaultAddress = "0x1a51f1966d35661573908DC913307076d937aa90"; 
+        const investorVaultAddress = "0x1a51f1966d35661573908DC913307076d937aa90";
+        const yieldVaultAddress = "0x44D64E1B9dC5F90b389900Da24B8de631222432C";
 
         // --- Ethers.js Setup ---
         let provider;
@@ -171,13 +184,18 @@
         const vaultCompoundYieldBtn = document.getElementById('vault-compound-yield-btn');
         const vaultWithdrawAllBtn = document.getElementById('vault-withdraw-all-btn');
         
-        // Staking & LeaseToken Buttons
         const claimBtn = document.getElementById('claim');
         const stakeBtn = document.getElementById('stake');
         const unstakeBtn = document.getElementById('unstake');
         const redeemLeaseTokenBtn = document.getElementById('redeemLeaseToken');
         const earlyRedeemBtn = document.getElementById('earlyRedeem');
         const buyLeaseTokenBtn = document.getElementById('buyLeaseToken');
+
+        // Platform Totals UI Elements
+        const platformInvestorVaultBalanceEl = document.getElementById('platform-investor-vault-balance');
+        const platformTotalDepositedEl = document.getElementById('platform-total-deposited');
+        const platformYieldVaultBalanceEl = document.getElementById('platform-yield-vault-balance');
+        const platformTotalFeesEl = document.getElementById('platform-total-fees');
 
 
         // --- Helper Functions ---
@@ -186,6 +204,10 @@
             notificationToast.className = `px-4 py-2 rounded-lg shadow-lg text-white ${isError ? 'bg-red-600' : 'bg-gray-700'}`;
             notificationToast.classList.add('show');
             setTimeout(() => { notificationToast.classList.remove('show'); }, 3000);
+        }
+
+        function formatCurrency(value) {
+            return `$${parseFloat(value).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
         }
 
         // --- Core Application Logic ---
@@ -200,14 +222,29 @@
             const srev = new ethers.Contract(srevAddress, srevAbi, provider);
             const lease = new ethers.Contract(leaseAddress, leaseBondAbi, provider);
             const reward = new ethers.Contract(rewardAddress, rewardAbi, provider);
-            const vault = new ethers.Contract(investorVaultAddress, investorVaultAbi, provider);
+            const investorVault = new ethers.Contract(investorVaultAddress, investorVaultAbi, provider);
+            const yieldVault = new ethers.Contract(yieldVaultAddress, yieldVaultAbi, provider);
 
-            const [srevBal, leaseBal, pool, pending, vaultYield] = await Promise.all([
+            const [
+                srevBal, 
+                leaseBal, 
+                pool, 
+                pending, 
+                vaultYield,
+                investorVaultTotals,
+                totalCapitalDeposited,
+                yieldVaultBalance,
+                totalFees
+            ] = await Promise.all([
                 srev.balanceOf(user),
                 lease.balanceOf(user),
                 reward.viewRewardPoolBalance(),
                 reward.viewPending(user),
-                vault.claimableYield(user)
+                investorVault.claimableYield(user),
+                investorVault.getVaultTotals(),
+                investorVault.totalDeposits(),
+                yieldVault.getVaultBalance(),
+                yieldVault.totalFeesAccumulatedInVault()
             ]);
             
             srevBalanceEl.innerText = parseFloat(ethers.utils.formatUnits(srevBal, 18)).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
@@ -215,6 +252,13 @@
             rewardPoolEl.innerText = `${parseFloat(ethers.utils.formatUnits(pool, 6)).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})} USDC`;
             pendingRewardsEl.innerText = `${parseFloat(ethers.utils.formatUnits(pending, 18)).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})} USDC`;
             vaultClaimableYieldEl.innerText = parseFloat(ethers.utils.formatUnits(vaultYield, 6)).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+
+            // Populate Platform Totals
+            platformInvestorVaultBalanceEl.innerText = formatCurrency(ethers.utils.formatUnits(investorVaultTotals.totalUSDC, 6));
+            platformTotalDepositedEl.innerText = formatCurrency(ethers.utils.formatUnits(totalCapitalDeposited, 6));
+            platformYieldVaultBalanceEl.innerText = formatCurrency(ethers.utils.formatUnits(yieldVaultBalance, 6));
+            platformTotalFeesEl.innerText = formatCurrency(ethers.utils.formatUnits(totalFees, 6));
+
 
             connectWalletContainer.classList.add('hidden');
             dashboardContent.classList.remove('hidden');
@@ -345,7 +389,6 @@
             }
         }
 
-        // --- Staking Action Handlers ---
         async function handleStakingClaim() {
             if (!signer) return showNotification("Please connect your wallet first.", true);
             try {
@@ -371,7 +414,6 @@
             try {
                 const srevContract = new ethers.Contract(srevAddress, erc20Abi, signer);
                 showNotification("Approving SREV for staking...");
-                // Note: Staking contract address is assumed to be the rewardAddress
                 const txApprove = await srevContract.approve(rewardAddress, ethers.utils.parseUnits(amount, 18));
                 await txApprove.wait();
                 
@@ -456,14 +498,12 @@
             depositBtn.classList.add('opacity-50', 'cursor-not-allowed');
         });
 
-        // Investor Vault listeners
         approveDepositBtn.addEventListener('click', handleApproveDeposit);
         depositBtn.addEventListener('click', handleDeposit);
         vaultClaimYieldBtn.addEventListener('click', handleVaultClaim);
         vaultCompoundYieldBtn.addEventListener('click', handleVaultCompound);
         vaultWithdrawAllBtn.addEventListener('click', handleVaultWithdraw);
         
-        // Staking and LeaseToken listeners
         buyLeaseTokenBtn.addEventListener('click', handleBuyLeaseToken);
         claimBtn.addEventListener('click', handleStakingClaim);
         stakeBtn.addEventListener('click', handleStakeSrv);
