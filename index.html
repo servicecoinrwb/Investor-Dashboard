@@ -26,7 +26,7 @@
   </style>
 </head>
 <body class="bg-black text-white font-sans">
-  <div class="max-w-4xl mx-auto p-6">
+  <div class="max-w-6xl mx-auto p-6">
     <h1 class="text-3xl font-bold mb-6">Service Coin Ecosystem</h1>
     
     <div id="connect-wallet-container" class="text-center bg-gray-800 p-8 rounded-lg shadow-md">
@@ -36,87 +36,100 @@
     </div>
 
     <div id="dashboard-content" class="hidden">
-        <div class="bg-gray-800 p-4 rounded-lg mb-4 shadow-md">
+        <!-- Wallet Info (Full Width) -->
+        <div class="bg-gray-800 p-4 rounded-lg mb-6 shadow-md">
           <p><strong>Wallet:</strong> <span id="wallet">-</span></p>
           <p class="text-sm text-gray-400">View your verified holdings, staking receipts, and redemption timeline.</p>
         </div>
 
-        <div class="grid md:grid-cols-3 gap-4 mb-4">
-          <div class="bg-gray-800 p-4 rounded-lg shadow-md">
-            <p class="text-lg font-bold">SREV Balance</p>
-            <p id="srev-balance" class="text-2xl font-mono">0.00</p>
-            <p class="text-sm text-gray-400">Auto-yielding USDC receipt</p>
-          </div>
-          <div class="bg-gray-800 p-4 rounded-lg shadow-md">
-            <p class="text-lg font-bold">PFLOW25</p>
-            <p id="lease-token" class="text-2xl font-mono">0</p>
-            <p class="text-sm text-gray-400">$10 Buy 10.80 Early Redeem after Cooldown period $12 redeemable after maturity</p>
-          </div>
-           <div class="bg-gray-800 p-4 rounded-lg shadow-md">
-            <p class="text-lg font-bold">Vault Claimable Yield</p>
-            <p id="vault-claimable-yield" class="text-2xl font-mono">0.00</p>
-            <p class="text-sm text-gray-400">USDC earned in vault</p>
-          </div>
-        </div>
-
-        <div class="bg-gray-800 p-4 rounded-lg mb-4 shadow-md">
-            <h3 class="text-xl font-bold mb-4">Platform Totals</h3>
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
-                <div>
-                    <p class="text-sm text-gray-400">Investor Vault Balance</p>
-                    <p id="platform-investor-vault-balance" class="text-lg font-mono">$0.00</p>
+        <!-- Main Two-Column Layout -->
+        <div class="grid lg:grid-cols-5 gap-6">
+            <!-- Left Column -->
+            <div class="lg:col-span-3 space-y-6">
+                <!-- Balances -->
+                <div class="grid md:grid-cols-2 gap-4">
+                  <div class="bg-gray-800 p-4 rounded-lg shadow-md">
+                    <p class="text-lg font-bold">SREV Balance</p>
+                    <p id="srev-balance" class="text-2xl font-mono">0.00</p>
+                    <p class="text-sm text-gray-400">Auto-yielding USDC receipt</p>
+                  </div>
+                  <div class="bg-gray-800 p-4 rounded-lg shadow-md">
+                    <p class="text-lg font-bold">PFLOW25</p>
+                    <p id="lease-token" class="text-2xl font-mono">0</p>
+                    <p class="text-sm text-gray-400">$10 Buy 10.80 Early Redeem after Cooldown period $12 redeemable after maturity</p>
+                  </div>
+                   <div class="bg-gray-800 p-4 rounded-lg shadow-md md:col-span-2">
+                    <p class="text-lg font-bold">Vault Claimable Yield</p>
+                    <p id="vault-claimable-yield" class="text-2xl font-mono">0.00</p>
+                    <p class="text-sm text-gray-400">USDC earned in vault</p>
+                  </div>
                 </div>
-                <div>
-                    <p class="text-sm text-gray-400">Total Capital Deposited</p>
-                    <p id="platform-total-deposited" class="text-lg font-mono">$0.00</p>
-                </div>
-                <div>
-                    <p class="text-sm text-gray-400">Yield Vault Balance</p>
-                    <p id="platform-yield-vault-balance" class="text-lg font-mono">$0.00</p>
-                </div>
-                <div>
-                    <p class="text-sm text-gray-400">Total Fees Processed</p>
-                    <p id="platform-total-fees" class="text-lg font-mono">$0.00</p>
-                </div>
-            </div>
-        </div>
 
-
-        <div class="bg-gray-800 p-4 rounded-lg mb-4 shadow-md">
-          <p class="text-lg font-bold">Staking Yield Pool</p>
-          <p class="text-sm">Pool Balance: <span id="reward-pool">0.00 USDC</span></p>
-          <p class="text-sm">Your Pending Rewards: <span id="pending-rewards">0.00 USDC</span></p>
-        </div>
-
-        <div class="bg-gray-800 p-4 rounded-lg mb-4 shadow-md">
-            <h3 class="text-xl font-bold mb-4">SRV Staking & PFLOW25</h3>
-            <div class="flex flex-wrap gap-2">
-              <button id="claim" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">Claim Yield (Staking)</button>
-              <button id="stake" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">Stake SRV</button>
-              <button id="unstake" class="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded-lg transition-colors">Unstake SRV</button>
-              <button id="redeemLeaseToken" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">Redeem PFLOW25</button>
-              <button id="earlyRedeem" class="bg-white text-black font-bold py-2 px-4 rounded-lg transition-colors">Early Redeem</button>
-              <button id="buyLeaseToken" class="bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-2 px-4 rounded-lg transition-colors">Buy PFLOW25</button>
-            </div>
-        </div>
-        
-        <div class="bg-gray-800 p-4 rounded-lg mb-4 shadow-md">
-            <h3 class="text-xl font-bold mb-4">Real Yield System</h3>
+                <!-- Staking and LeaseToken Actions -->
+                <div class="bg-gray-800 p-4 rounded-lg shadow-md">
+                    <h3 class="text-xl font-bold mb-4">SRV Staking & PFLOW25</h3>
+                    <div class="flex flex-wrap gap-2">
+                      <button id="claim" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">Claim Yield (Staking)</button>
+                      <button id="stake" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">Stake SRV</button>
+                      <button id="unstake" class="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded-lg transition-colors">Unstake SRV</button>
+                      <button id="redeemLeaseToken" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">Redeem PFLOW25</button>
+                      <button id="earlyRedeem" class="bg-white text-black font-bold py-2 px-4 rounded-lg transition-colors">Early Redeem</button>
+                      <button id="buyLeaseToken" class="bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-2 px-4 rounded-lg transition-colors">Buy PFLOW25</button>
+                    </div>
+                </div>
+                
+                <!-- Investor Vault Actions -->
+                <div class="bg-gray-800 p-4 rounded-lg shadow-md">
+                    <h3 class="text-xl font-bold mb-4">Real Yield System</h3>
+                    
+                    <div class="mb-6 border-b border-gray-700 pb-6">
+                        <label for="deposit-amount" class="block text-sm font-medium text-gray-300 mb-2">Deposit USDC to Real Yield System</label>
+                        <div class="flex flex-col sm:flex-row gap-2">
+                            <input type="text" id="deposit-amount" placeholder="USDC Amount" class="bg-gray-900 border border-gray-700 text-white rounded-lg p-2 flex-grow focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                            <button id="approve-deposit-btn" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">Approve</button>
+                            <button id="deposit-btn" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg transition-colors opacity-50 cursor-not-allowed" disabled>Deposit</button>
+                        </div>
+                        <p class="text-xs text-gray-500 mt-2">First approve, then deposit.</p>
+                    </div>
             
-            <div class="mb-6 border-b border-gray-700 pb-6">
-                <label for="deposit-amount" class="block text-sm font-medium text-gray-300 mb-2">Deposit USDC to Real Yield System</label>
-                <div class="flex flex-col sm:flex-row gap-2">
-                    <input type="text" id="deposit-amount" placeholder="USDC Amount" class="bg-gray-900 border border-gray-700 text-white rounded-lg p-2 flex-grow focus:ring-2 focus:ring-indigo-500 focus:outline-none">
-                    <button id="approve-deposit-btn" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">Approve</button>
-                    <button id="deposit-btn" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg transition-colors opacity-50 cursor-not-allowed" disabled>Deposit</button>
+                    <div class="flex flex-wrap gap-2">
+                        <button id="vault-claim-yield-btn" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">Claim Yield</button>
+                        <button id="vault-compound-yield-btn" class="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded-lg transition-colors">Compound Yield</button>
+                        <button id="vault-withdraw-all-btn" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">Withdraw All</button>
+                    </div>
                 </div>
-                <p class="text-xs text-gray-500 mt-2">First approve, then deposit.</p>
             </div>
-    
-            <div class="flex flex-wrap gap-2">
-                <button id="vault-claim-yield-btn" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">Claim Yield</button>
-                <button id="vault-compound-yield-btn" class="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded-lg transition-colors">Compound Yield</button>
-                <button id="vault-withdraw-all-btn" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">Withdraw All</button>
+            <!-- Right Column -->
+            <div class="lg:col-span-2 space-y-6">
+                <!-- Platform Totals -->
+                <div class="bg-gray-800 p-4 rounded-lg shadow-md">
+                    <h3 class="text-xl font-bold mb-4">Platform Totals</h3>
+                    <div class="grid grid-cols-2 gap-4 text-center">
+                        <div>
+                            <p class="text-sm text-gray-400">Investor Vault Balance</p>
+                            <p id="platform-investor-vault-balance" class="text-lg font-mono">$0.00</p>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-400">Total Capital Deposited</p>
+                            <p id="platform-total-deposited" class="text-lg font-mono">$0.00</p>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-400">Yield Vault Balance</p>
+                            <p id="platform-yield-vault-balance" class="text-lg font-mono">$0.00</p>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-400">Total Fees Processed</p>
+                            <p id="platform-total-fees" class="text-lg font-mono">$0.00</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Yield Pool -->
+                <div class="bg-gray-800 p-4 rounded-lg shadow-md">
+                  <p class="text-lg font-bold">Staking Yield Pool</p>
+                  <p class="text-sm">Pool Balance: <span id="reward-pool">0.00 USDC</span></p>
+                  <p class="text-sm">Your Pending Rewards: <span id="pending-rewards">0.00 USDC</span></p>
+                </div>
             </div>
         </div>
     </div>
