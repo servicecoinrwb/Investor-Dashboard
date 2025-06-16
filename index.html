@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Service Coin Ecosystem Hub</title>
+  <title>SRV Staking & PFLOW25 Hub</title>
   <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
@@ -27,7 +27,7 @@
 </head>
 <body class="bg-black text-white font-sans">
   <div class="max-w-4xl mx-auto p-6">
-    <h1 class="text-3xl font-bold mb-6">Service Coin Ecosystem Hub</h1>
+    <h1 class="text-3xl font-bold mb-6">SRV Staking & PFLOW25 Hub</h1>
     
     <!-- Container for wallet connection prompt -->
     <div id="connect-wallet-container" class="text-center bg-gray-800 p-8 rounded-lg shadow-md">
@@ -52,7 +52,7 @@
             <p class="text-sm text-gray-400">Auto-yielding USDC receipt</p>
           </div>
           <div class="bg-gray-800 p-4 rounded-lg shadow-md">
-            <p class="text-lg font-bold">LeaseToken_2025</p>
+            <p class="text-lg font-bold">PFLOW25</p>
             <p id="lease-token" class="text-2xl font-mono">0</p>
             <p class="text-sm text-gray-400">$12 redeemable after maturity</p>
           </div>
@@ -72,14 +72,14 @@
 
         <!-- Staking and LeaseToken Actions -->
         <div class="bg-gray-800 p-4 rounded-lg mb-4 shadow-md">
-            <h3 class="text-xl font-bold mb-4">Staking & LeaseToken Actions</h3>
+            <h3 class="text-xl font-bold mb-4">SRV Staking & PFLOW25</h3>
             <div class="flex flex-wrap gap-2">
               <button id="claim" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">Claim Yield (Staking)</button>
               <button id="stake" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">Stake SRV</button>
               <button id="unstake" class="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded-lg transition-colors">Unstake SRV</button>
-              <button id="redeemLeaseToken" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">Redeem LeaseToken</button>
+              <button id="redeemLeaseToken" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">Redeem PFLOW25</button>
               <button id="earlyRedeem" class="bg-white text-black font-bold py-2 px-4 rounded-lg transition-colors">Early Redeem</button>
-              <button id="buyLeaseToken" class="bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-2 px-4 rounded-lg transition-colors">Buy LeaseToken</button>
+              <button id="buyLeaseToken" class="bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-2 px-4 rounded-lg transition-colors">Buy PFLOW25</button>
             </div>
         </div>
         
@@ -130,14 +130,12 @@
       "function balanceOf(address owner) view returns (uint256)",
       "function allowance(address owner, address spender) view returns (uint256)"
     ];
-    // FIX: Updated Investor Vault ABI
     const investorVaultAbi = [{"inputs":[{"internalType":"address","name":"_usdc","type":"address"}],"stateMutability":"nonpayable","type":"constructor"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"investor","type":"address"},{"indexed":false,"internalType":"uint256","name":"amount","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"sharesMinted","type":"uint256"}],"name":"Deposited","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"oldKernel","type":"address"},{"indexed":true,"internalType":"address","name":"newKernel","type":"address"}],"name":"KernelUpdated","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"previousOwner","type":"address"},{"indexed":true,"internalType":"address","name":"newOwner","type":"address"}],"name":"OwnershipTransferred","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"investor","type":"address"},{"indexed":false,"internalType":"uint256","name":"amount","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"sharesBurned","type":"uint256"}],"name":"Withdrawn","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"investor","type":"address"},{"indexed":false,"internalType":"uint256","name":"amount","type":"uint256"}],"name":"YieldClaimed","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"investor","type":"address"},{"indexed":false,"internalType":"uint256","name":"amount","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"newShares","type":"uint256"}],"name":"YieldCompounded","type":"event"},{"inputs":[],"name":"LOCKUP_PERIOD","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address[]","name":"investors","type":"address[]"}],"name":"batchClaimYield","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address[]","name":"investors","type":"address[]"}],"name":"batchWithdraw","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"claimYield","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"investor","type":"address"}],"name":"claimableYield","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"","type":"address"}],"name":"claimedYield","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"compoundYield","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"deposit","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"","type":"address"}],"name":"depositTimestamps","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"fundKernel","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"investor","type":"address"}],"name":"getInvestorInfo","outputs":[{"internalType":"uint256","name":"share","type":"uint256"},{"internalType":"uint256","name":"claimable","type":"uint256"},{"internalType":"uint256","name":"claimed","type":"uint256"},{"internalType":"uint256","name":"unlockTime","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"getVaultTotals","outputs":[{"internalType":"uint256","name":"totalUSDC","type":"uint256"},{"internalType":"uint256","name":"totalSharesMinted","type":"uint256"},{"internalType":"uint256","name":"totalYield","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"kernel","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"owner","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"receiveYield","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"renounceOwnership","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"_kernel","type":"address"}],"name":"setKernel","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"","type":"address"}],"name":"shares","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"totalDeposits","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"totalShares","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"totalYieldDistributed","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"newOwner","type":"address"}],"name":"transferOwnership","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"usdc","outputs":[{"internalType":"contract IERC20","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"shareAmount","type":"uint256"}],"name":"withdraw","outputs":[],"stateMutability":"nonpayable","type":"function"}];
 
     const usdcAddress = "0xaf88d065e77c8cC2239327C5EDb3A432268e5831";
     const srevAddress = "0x2F745Da2FA453ee76c756fADcc081f59284B2a40";
     const leaseAddress = "0xd0dc6eeE2dD77d7A4C09108993d0c7ad6a0b60E3";
     const rewardAddress = "0x71f618EFb0422687e5B2ad9cD973aDACb645D9DE";
-    // FIX: Updated Investor Vault Address
     const investorVaultAddress = "0x1a51f1966d35661573908DC913307076d937aa90"; 
 
     // --- Ethers.js Setup ---
@@ -217,7 +215,6 @@
         const formattedPending = parseFloat(ethers.utils.formatUnits(pending, 18));
         pendingRewardsEl.innerText = formattedPending.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) + " USDC";
         
-        // FIX: Display claimable vault yield, assuming 6 decimals for USDC
         const formattedVaultYield = parseFloat(ethers.utils.formatUnits(vaultYield, 6));
         vaultClaimableYieldEl.innerText = formattedVaultYield.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
 
@@ -250,7 +247,6 @@
 
         // --- Investor Vault Listeners ---
         
-        // Disable deposit button if amount changes, requiring re-approval
         depositAmountInput.addEventListener('input', () => {
             depositBtn.disabled = true;
             depositBtn.classList.add('opacity-50', 'cursor-not-allowed');
@@ -290,8 +286,8 @@
                 const tx = await vault.deposit(ethers.utils.parseUnits(amount, 6));
                 await tx.wait();
                 showNotification("Deposit successful!", false);
-                depositAmountInput.value = ""; // Clear input
-                depositBtn.disabled = true; // Disable button after deposit
+                depositAmountInput.value = ""; 
+                depositBtn.disabled = true; 
                 depositBtn.classList.add('opacity-50', 'cursor-not-allowed');
                 connectAndLoadDashboard(); // Refresh data
             } catch(error) {
@@ -334,14 +330,25 @@
             if (!signer) return showNotification("Please connect your wallet first.", true);
              try {
                 const vault = new ethers.Contract(investorVaultAddress, investorVaultAbi, signer);
+                const user = await signer.getAddress();
+                
+                showNotification("Fetching your shares to withdraw...");
+                // FIX: Get the user's total shares first
+                const userShares = await vault.shares(user);
+
+                if (userShares.isZero()) {
+                    return showNotification("You have no shares to withdraw.", true);
+                }
+
                 showNotification("Withdrawing all funds...");
-                const tx = await vault.withdrawAll(); // Note: The ABI shows withdraw(shareAmount), not withdrawAll()
+                // FIX: Call withdraw with the user's total shares
+                const tx = await vault.withdraw(userShares);
                 await tx.wait();
                 showNotification("Withdrawal successful!", false);
                 connectAndLoadDashboard(); // Refresh data
             } catch(error) {
                 console.error("Withdrawal failed:", error);
-                showNotification(error.reason || "Withdrawal failed. Check contract ABI.", true);
+                showNotification(error.reason || "Withdrawal failed.", true);
             }
         });
 
