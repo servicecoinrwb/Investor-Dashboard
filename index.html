@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Service Coin Ecosystem</title>
+  <title>SRV Staking & PFLOW25 Hub</title>
   <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
@@ -27,7 +27,7 @@
 </head>
 <body class="bg-black text-white font-sans">
   <div class="max-w-4xl mx-auto p-6">
-    <h1 class="text-3xl font-bold mb-6">Service Coin Ecosystem</h1>
+    <h1 class="text-3xl font-bold mb-6">SRV Staking & PFLOW25 Hub</h1>
     
     <!-- Container for wallet connection prompt -->
     <div id="connect-wallet-container" class="text-center bg-gray-800 p-8 rounded-lg shadow-md">
@@ -118,13 +118,20 @@
     document.addEventListener("DOMContentLoaded", () => {
         // --- ABIs and Contract Addresses ---
         const srevAbi = [{"constant":true,"inputs":[{"name":"owner","type":"address"}],"name":"balanceOf","outputs":[{"name":"","type":"uint256"}],"type":"function"}];
+        // FIX: Added more functions to the leaseBondAbi based on button names
         const leaseBondAbi = [
           {"constant":true,"inputs":[{"name":"owner","type":"address"}],"name":"balanceOf","outputs":[{"name":"","type":"uint256"}],"type":"function"},
-          {"inputs":[{"name":"amount","type":"uint256"}],"name":"buy","outputs":[],"stateMutability":"nonpayable","type":"function"}
+          {"inputs":[{"name":"amount","type":"uint256"}],"name":"buy","outputs":[],"stateMutability":"nonpayable","type":"function"},
+          {"inputs":[],"name":"redeem","outputs":[],"stateMutability":"nonpayable","type":"function"}, // Assumed function
+          {"inputs":[],"name":"earlyRedeem","outputs":[],"stateMutability":"nonpayable","type":"function"} // Assumed function
         ];
+        // FIX: Added a "claim" function to the staking rewards ABI
         const rewardAbi = [
           {"inputs":[],"name":"viewRewardPoolBalance","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
-          {"inputs":[{"internalType":"address","name":"account","type":"address"}],"name":"viewPending","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"}
+          {"inputs":[{"internalType":"address","name":"account","type":"address"}],"name":"viewPending","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
+          {"inputs":[],"name":"claim","outputs":[],"stateMutability":"nonpayable","type":"function"}, // Assumed function
+          {"inputs":[{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"stake","outputs":[],"stateMutability":"nonpayable","type":"function"}, // Assumed function
+          {"inputs":[{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"unstake","outputs":[],"stateMutability":"nonpayable","type":"function"} // Assumed function
         ];
         const erc20Abi = [
           "function approve(address spender, uint256 amount) external returns (bool)",
@@ -338,30 +345,97 @@
             }
         }
 
-        // --- NEW: Placeholder Action Handlers for Staking/LeaseToken ---
-        function handleStakingClaim() {
-            showNotification("Staking claim function not implemented yet.");
-            // TODO: Add your staking claim logic here
+        // --- Staking Action Handlers ---
+        async function handleStakingClaim() {
+            if (!signer) return showNotification("Please connect your wallet first.", true);
+            try {
+                const rewardContract = new ethers.Contract(rewardAddress, rewardAbi, signer);
+                showNotification("Claiming staking rewards...");
+                const tx = await rewardContract.claim();
+                await tx.wait();
+                showNotification("Staking rewards claimed!", false);
+                connectAndLoadDashboard();
+            } catch (error) {
+                console.error("Staking claim failed:", error);
+                showNotification(error.reason || "Staking claim failed. Check contract ABI.", true);
+            }
         }
 
-        function handleStakeSrv() {
-            showNotification("Stake SRV function not implemented yet.");
-            // TODO: Add your SRV staking logic here
+        async function handleStakeSrv() {
+            if (!signer) return showNotification("Please connect your wallet first.", true);
+            const amount = prompt("Enter amount of SREV to stake:");
+            if (!amount || isNaN(amount) || parseFloat(amount) <= 0) {
+                if (amount !== null) showNotification("Invalid amount entered.", true);
+                return;
+            }
+            try {
+                const srevContract = new ethers.Contract(srevAddress, erc20Abi, signer);
+                showNotification("Approving SREV for staking...");
+                // Note: Staking contract address is assumed to be the rewardAddress
+                const txApprove = await srevContract.approve(rewardAddress, ethers.utils.parseUnits(amount, 18));
+                await txApprove.wait();
+                
+                showNotification("Staking SREV...");
+                const rewardContract = new ethers.Contract(rewardAddress, rewardAbi, signer);
+                const txStake = await rewardContract.stake(ethers.utils.parseUnits(amount, 18));
+                await txStake.wait();
+
+                showNotification("SREV staked successfully!", false);
+                connectAndLoadDashboard();
+            } catch (error) {
+                console.error("Stake SRV failed:", error);
+                showNotification(error.reason || "Stake SRV failed. Check contract ABI.", true);
+            }
         }
 
-        function handleUnstakeSrv() {
-            showNotification("Unstake SRV function not implemented yet.");
-            // TODO: Add your SRV unstaking logic here
+        async function handleUnstakeSrv() {
+            if (!signer) return showNotification("Please connect your wallet first.", true);
+            const amount = prompt("Enter amount of SREV to unstake:");
+            if (!amount || isNaN(amount) || parseFloat(amount) <= 0) {
+                if (amount !== null) showNotification("Invalid amount entered.", true);
+                return;
+            }
+            try {
+                const rewardContract = new ethers.Contract(rewardAddress, rewardAbi, signer);
+                showNotification("Unstaking SREV...");
+                const tx = await rewardContract.unstake(ethers.utils.parseUnits(amount, 18));
+                await tx.wait();
+                showNotification("SREV unstaked successfully!", false);
+                connectAndLoadDashboard();
+            } catch (error) {
+                console.error("Unstake SRV failed:", error);
+                showNotification(error.reason || "Unstake SRV failed. Check contract ABI.", true);
+            }
         }
 
-        function handleRedeemLeaseToken() {
-            showNotification("Redeem PFLOW25 function not implemented yet.");
-            // TODO: Add your lease token redemption logic here
+        async function handleRedeemLeaseToken() {
+             if (!signer) return showNotification("Please connect your wallet first.", true);
+            try {
+                const leaseContract = new ethers.Contract(leaseAddress, leaseBondAbi, signer);
+                showNotification("Redeeming PFLOW25...");
+                const tx = await leaseContract.redeem();
+                await tx.wait();
+                showNotification("PFLOW25 redeemed successfully!", false);
+                connectAndLoadDashboard();
+            } catch (error) {
+                console.error("Redeem PFLOW25 failed:", error);
+                showNotification(error.reason || "Redeem failed. Check contract ABI.", true);
+            }
         }
 
-        function handleEarlyRedeem() {
-            showNotification("Early redeem function not implemented yet.");
-            // TODO: Add your early redemption logic here
+        async function handleEarlyRedeem() {
+            if (!signer) return showNotification("Please connect your wallet first.", true);
+            try {
+                const leaseContract = new ethers.Contract(leaseAddress, leaseBondAbi, signer);
+                showNotification("Executing early redeem...");
+                const tx = await leaseContract.earlyRedeem();
+                await tx.wait();
+                showNotification("Early redeem successful!", false);
+                connectAndLoadDashboard();
+            } catch (error) {
+                console.error("Early redeem failed:", error);
+                showNotification(error.reason || "Early redeem failed. Check contract ABI.", true);
+            }
         }
 
 
