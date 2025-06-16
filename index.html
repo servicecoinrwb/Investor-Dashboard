@@ -30,58 +30,84 @@
     </div>
 
     <div class="bg-gray-800 rounded-xl p-6">
-      <h2 class="text-xl font-semibold mb-2">USDC Yield History</h2>
-      <p class="text-gray-400 text-sm">Coming soon: on-chain reward stream data.</p>
+      <h2 class="text-xl font-semibold mb-2">USDC Yield Pool</h2>
+      <p class="text-gray-400 text-sm">Pool Balance: <span id="reward-pool">Loading...</span></p>
+      <p class="text-gray-400 text-sm">Your Pending Rewards: <span id="pending-rewards">Loading...</span></p>
     </div>
 
-    <div class="flex gap-4 justify-center">
+    <div class="flex flex-wrap gap-4 justify-center">
       <button class="bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-4 rounded" onclick="claimYield()">
         Claim Yield
       </button>
       <button class="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded" onclick="stakeSRV()">
         Stake SRV
       </button>
-      <button class="bg-yellow-500 hover:bg-yellow-600 text-white font-semibold py-2 px-4 rounded" onclick="redeemLeaseToken()">
+      <button class="bg-yellow-500 hover:bg-yellow-600 text-white font-semibold py-2 px-4 rounded" onclick="unstakeSRV()">
+        Unstake SRV
+      </button>
+      <button class="bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-4 rounded" onclick="redeemLeaseToken()">
         Redeem LeaseToken
+      </button>
+      <button class="bg-orange-500 hover:bg-orange-600 text-white font-semibold py-2 px-4 rounded" onclick="earlyRedeem()">
+        Early Redeem
       </button>
     </div>
   </div>
 
   <script>
     const srevAbi = ["function balanceOf(address) view returns (uint256)"];
-    const leaseAbi = ["function balanceOf(address) view returns (uint256)"];
-    const rewardAbi = ["function claim()"];
-    const stakingAbi = ["function stake(uint256)"];
-    const leaseRedeemAbi = ["function redeem()"];
+    const leaseAbi = ["function balanceOf(address) view returns (uint256)", "function redeem()", "function earlyRedeem()"];
+    const rewardAbi = ["function claim()", "function viewRewardPoolBalance() view returns (uint256)", "function viewPending(address) view returns (uint256)"];
+    const stakingAbi = ["function stake(uint256)", "function unstake(uint256)", "function staked(address) view returns (uint256)"];
 
     const srevAddress = "0x2f745da2fa453ee76c756fadcc081f59284b2a40";
     const leaseAddress = "0xd0dc6eeE2dD77d7A4C09108993d0c7ad6a0b60E3";
-    const rewardContract = "0x71f618EFb0422687e5B2ad9cD973aDACb645D9DE";
+    const rewardAddress = "0x71f618EFb0422687e5B2ad9cD973aDACb645D9DE";
     const stakingVault = "0x691e29E98ECDc5ae948355F30102cD4D637eddB7";
 
     let signer;
 
-    async function init() {
-      if (window.ethereum) {
-        const provider = new ethers.providers.Web3Provider(window.ethereum);
-        await provider.send("eth_requestAccounts", []);
-        signer = provider.getSigner();
-        const address = await signer.getAddress();
-        document.getElementById("wallet").innerText = address;
-
-        const srev = new ethers.Contract(srevAddress, srevAbi, provider);
-        const lease = new ethers.Contract(leaseAddress, leaseAbi, provider);
-        const srevBal = await srev.balanceOf(address);
-        const leaseBal = await lease.balanceOf(address);
-        document.getElementById("srev-balance").innerText = (srevBal / 1e18).toFixed(2);
-        document.getElementById("lease-count").innerText = leaseBal.toString();
+    async function switchToArbitrum() {
+      try {
+        await window.ethereum.request({
+          method: 'wallet_switchEthereumChain',
+          params: [{ chainId: '0xa4b1' }]
+        });
+      } catch (err) {
+        alert("Please switch to Arbitrum One network");
       }
     }
 
+    async function init() {
+      if (!window.ethereum) return;
+      await switchToArbitrum();
+      const provider = new ethers.providers.Web3Provider(window.ethereum);
+      await provider.send("eth_requestAccounts", []);
+      signer = provider.getSigner();
+      const address = await signer.getAddress();
+      document.getElementById("wallet").innerText = address;
+
+      const srev = new ethers.Contract(srevAddress, srevAbi, provider);
+      const lease = new ethers.Contract(leaseAddress, leaseAbi, provider);
+      const staking = new ethers.Contract(stakingVault, stakingAbi, provider);
+      const reward = new ethers.Contract(rewardAddress, rewardAbi, provider);
+
+      const srevBal = await srev.balanceOf(address);
+      const leaseBal = await lease.balanceOf(address);
+      const stakedBal = await staking.staked(address);
+      const pending = await reward.viewPending(address);
+      const pool = await reward.viewRewardPoolBalance();
+
+      document.getElementById("srev-balance").innerText = (srevBal / 1e18).toFixed(2);
+      document.getElementById("lease-count").innerText = leaseBal.toString();
+      document.getElementById("pending-rewards").innerText = (pending / 1e6).toFixed(2) + " USDC";
+      document.getElementById("reward-pool").innerText = (pool / 1e6).toFixed(2) + " USDC";
+    }
+
     async function claimYield() {
-      const reward = new ethers.Contract(rewardContract, rewardAbi, signer);
+      const contract = new ethers.Contract(rewardAddress, rewardAbi, signer);
       try {
-        const tx = await reward.claim();
+        const tx = await contract.claim();
         alert("Claim initiated: " + tx.hash);
       } catch (err) {
         alert("Claim failed: " + err.message);
@@ -96,17 +122,39 @@
         const tx = await contract.stake(ethers.utils.parseUnits(amount, 18));
         alert("Staking initiated: " + tx.hash);
       } catch (err) {
-        alert("Staking failed: " + err.message);
+        alert("Stake failed: " + err.message);
+      }
+    }
+
+    async function unstakeSRV() {
+      const amount = prompt("Enter SREV amount to unstake:");
+      if (!amount) return;
+      const contract = new ethers.Contract(stakingVault, stakingAbi, signer);
+      try {
+        const tx = await contract.unstake(ethers.utils.parseUnits(amount, 18));
+        alert("Unstake initiated: " + tx.hash);
+      } catch (err) {
+        alert("Unstake failed: " + err.message);
       }
     }
 
     async function redeemLeaseToken() {
-      const lease = new ethers.Contract(leaseAddress, leaseRedeemAbi, signer);
+      const lease = new ethers.Contract(leaseAddress, leaseAbi, signer);
       try {
         const tx = await lease.redeem();
         alert("Redeem initiated: " + tx.hash);
       } catch (err) {
         alert("Redeem failed: " + err.message);
+      }
+    }
+
+    async function earlyRedeem() {
+      const lease = new ethers.Contract(leaseAddress, leaseAbi, signer);
+      try {
+        const tx = await lease.earlyRedeem();
+        alert("Early redeem initiated: " + tx.hash);
+      } catch (err) {
+        alert("Early redeem failed: " + err.message);
       }
     }
 
