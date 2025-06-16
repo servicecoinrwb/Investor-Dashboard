@@ -115,10 +115,7 @@
 
 
   <script>
-    // --- App Main Function ---
-    // FIX: Encapsulate the entire logic in a main function that runs on window load
-    // This prevents race conditions and ensures all elements are available.
-    async function main() {
+    document.addEventListener("DOMContentLoaded", () => {
         // --- ABIs and Contract Addresses ---
         const srevAbi = [{"constant":true,"inputs":[{"name":"owner","type":"address"}],"name":"balanceOf","outputs":[{"name":"","type":"uint256"}],"type":"function"}];
         const leaseBondAbi = [
@@ -160,35 +157,27 @@
         const dashboardContent = document.getElementById('dashboard-content');
         const vaultClaimableYieldEl = document.getElementById('vault-claimable-yield');
 
-        // UI Elements for Investor Vault
         const depositAmountInput = document.getElementById('deposit-amount');
         const approveDepositBtn = document.getElementById('approve-deposit-btn');
         const depositBtn = document.getElementById('deposit-btn');
         const vaultClaimYieldBtn = document.getElementById('vault-claim-yield-btn');
         const vaultCompoundYieldBtn = document.getElementById('vault-compound-yield-btn');
         const vaultWithdrawAllBtn = document.getElementById('vault-withdraw-all-btn');
+        const buyLeaseTokenBtn = document.getElementById('buyLeaseToken');
 
 
-        /**
-         * Shows a notification message at the bottom of the screen.
-         */
+        // --- Helper Functions ---
         function showNotification(message, isError = false) {
             notificationMessage.textContent = message;
             notificationToast.className = `px-4 py-2 rounded-lg shadow-lg text-white ${isError ? 'bg-red-600' : 'bg-gray-700'}`;
             notificationToast.classList.add('show');
-            
-            setTimeout(() => {
-                notificationToast.classList.remove('show');
-            }, 3000);
+            setTimeout(() => { notificationToast.classList.remove('show'); }, 3000);
         }
 
-        /**
-         * Connects to the wallet, fetches data and populates the dashboard.
-         */
+        // --- Core Application Logic ---
         async function connectAndLoadDashboard() {
           try {
             provider = new ethers.providers.Web3Provider(window.ethereum, "any");
-
             await provider.send("eth_requestAccounts", []);
             signer = provider.getSigner();
             const user = await signer.getAddress();
@@ -199,7 +188,6 @@
             const reward = new ethers.Contract(rewardAddress, rewardAbi, provider);
             const vault = new ethers.Contract(investorVaultAddress, investorVaultAbi, provider);
 
-            // Fetch and display balances
             const [srevBal, leaseBal, pool, pending, vaultYield] = await Promise.all([
                 srev.balanceOf(user),
                 lease.balanceOf(user),
@@ -208,61 +196,27 @@
                 vault.claimableYield(user)
             ]);
             
-            const formattedSrev = parseFloat(ethers.utils.formatUnits(srevBal, 18));
-            srevBalanceEl.innerText = formattedSrev.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
-
+            srevBalanceEl.innerText = parseFloat(ethers.utils.formatUnits(srevBal, 18)).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
             leaseTokenEl.innerText = leaseBal.toString();
+            rewardPoolEl.innerText = `${parseFloat(ethers.utils.formatUnits(pool, 6)).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})} USDC`;
+            pendingRewardsEl.innerText = `${parseFloat(ethers.utils.formatUnits(pending, 18)).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})} USDC`;
+            vaultClaimableYieldEl.innerText = parseFloat(ethers.utils.formatUnits(vaultYield, 6)).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
 
-            const formattedPool = parseFloat(ethers.utils.formatUnits(pool, 6));
-            rewardPoolEl.innerText = formattedPool.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) + " USDC";
-            
-            const formattedPending = parseFloat(ethers.utils.formatUnits(pending, 18));
-            pendingRewardsEl.innerText = formattedPending.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) + " USDC";
-            
-            const formattedVaultYield = parseFloat(ethers.utils.formatUnits(vaultYield, 6));
-            vaultClaimableYieldEl.innerText = formattedVaultYield.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
-
-
-            // Show dashboard and hide connect prompt
             connectWalletContainer.classList.add('hidden');
             dashboardContent.classList.remove('hidden');
-
           } catch (error) {
             console.error("Connection/data fetch failed:", error);
             showNotification("Failed to connect to wallet or fetch data.", true);
           }
         }
         
-        // --- Event Listeners Setup ---
-        
-        // This is the primary click listener for connecting the wallet.
-        connectWalletBtn.addEventListener('click', () => {
-            if (typeof window.ethereum !== 'undefined') {
-                connectAndLoadDashboard();
-            } else {
-                showNotification("No wallet detected. Please install MetaMask.", true);
-                walletInstructions.textContent = "No web3 wallet detected. Please install a wallet like MetaMask to continue.";
-                connectWalletBtn.textContent = "Install MetaMask";
-                connectWalletBtn.onclick = () => {
-                    window.open("https://metamask.io/download/", "_blank");
-                };
-            }
-        });
-
-        // --- Investor Vault Listeners ---
-        
-        depositAmountInput.addEventListener('input', () => {
-            depositBtn.disabled = true;
-            depositBtn.classList.add('opacity-50', 'cursor-not-allowed');
-        });
-
-        approveDepositBtn.addEventListener('click', async () => {
+        // --- Action Handlers ---
+        async function handleApproveDeposit() {
             if (!signer) return showNotification("Please connect your wallet first.", true);
             const amount = depositAmountInput.value;
             if (!amount || isNaN(amount) || parseFloat(amount) <= 0) {
                 return showNotification("Please enter a valid amount.", true);
             }
-
             try {
                 const usdc = new ethers.Contract(usdcAddress, erc20Abi, signer);
                 showNotification("Approving USDC spend...");
@@ -275,15 +229,14 @@
                 console.error("Approval failed:", error);
                 showNotification(error.reason || "Approval failed.", true);
             }
-        });
-
-        depositBtn.addEventListener('click', async () => {
-            if (!signer) return showNotification("Please connect your wallet first.", true);
+        }
+        
+        async function handleDeposit() {
+             if (!signer) return showNotification("Please connect your wallet first.", true);
             const amount = depositAmountInput.value;
             if (!amount || isNaN(amount) || parseFloat(amount) <= 0) {
                 return showNotification("Please enter a valid amount.", true);
             }
-            
             try {
                 const vault = new ethers.Contract(investorVaultAddress, investorVaultAbi, signer);
                 showNotification("Depositing USDC...");
@@ -293,14 +246,14 @@
                 depositAmountInput.value = ""; 
                 depositBtn.disabled = true; 
                 depositBtn.classList.add('opacity-50', 'cursor-not-allowed');
-                connectAndLoadDashboard(); // Refresh data
+                connectAndLoadDashboard();
             } catch(error) {
                 console.error("Deposit failed:", error);
                 showNotification(error.reason || "Deposit failed.", true);
             }
-        });
+        }
 
-        vaultClaimYieldBtn.addEventListener('click', async () => {
+        async function handleVaultClaim() {
             if (!signer) return showNotification("Please connect your wallet first.", true);
              try {
                 const vault = new ethers.Contract(investorVaultAddress, investorVaultAbi, signer);
@@ -308,14 +261,14 @@
                 const tx = await vault.claimYield();
                 await tx.wait();
                 showNotification("Yield claimed!", false);
-                connectAndLoadDashboard(); // Refresh data
+                connectAndLoadDashboard();
             } catch(error) {
                 console.error("Claim failed:", error);
                 showNotification(error.reason || "Claim failed.", true);
             }
-        });
+        }
 
-        vaultCompoundYieldBtn.addEventListener('click', async () => {
+        async function handleVaultCompound() {
             if (!signer) return showNotification("Please connect your wallet first.", true);
              try {
                 const vault = new ethers.Contract(investorVaultAddress, investorVaultAbi, signer);
@@ -323,14 +276,14 @@
                 const tx = await vault.compoundYield();
                 await tx.wait();
                 showNotification("Yield compounded!", false);
-                connectAndLoadDashboard(); // Refresh data
+                connectAndLoadDashboard();
             } catch(error) {
                 console.error("Compound failed:", error);
                 showNotification(error.reason || "Compound failed.", true);
             }
-        });
+        }
 
-        vaultWithdrawAllBtn.addEventListener('click', async () => {
+        async function handleVaultWithdraw() {
             if (!signer) return showNotification("Please connect your wallet first.", true);
              try {
                 const vault = new ethers.Contract(investorVaultAddress, investorVaultAbi, signer);
@@ -347,54 +300,61 @@
                 const tx = await vault.withdraw(userShares);
                 await tx.wait();
                 showNotification("Withdrawal successful!", false);
-                connectAndLoadDashboard(); // Refresh data
+                connectAndLoadDashboard();
             } catch(error) {
                 console.error("Withdrawal failed:", error);
                 showNotification(error.reason || "Withdrawal failed.", true);
             }
-        });
+        }
 
-
-        // Add the click listener for the "Buy LeaseToken" button
-        document.getElementById("buyLeaseToken").addEventListener("click", async () => {
-          if (!signer) {
-            showNotification("Please connect your wallet first.", true);
-            return;
-          }
-
-          const amount = prompt("Enter amount of USDC to spend:");
-          if (!amount || isNaN(amount) || parseFloat(amount) <= 0) {
-            if (amount !== null) {
-                showNotification("Invalid amount entered.", true);
+        async function handleBuyLeaseToken() {
+            if (!signer) return showNotification("Please connect your wallet first.", true);
+            const amount = prompt("Enter amount of USDC to spend:");
+            if (!amount || isNaN(amount) || parseFloat(amount) <= 0) {
+                if (amount !== null) showNotification("Invalid amount entered.", true);
+                return;
             }
-            return;
-          }
-          
-          try {
+            try {
               const leaseBond = new ethers.Contract(leaseAddress, leaseBondAbi, signer);
               const usdc = new ethers.Contract(usdcAddress, erc20Abi, signer);
-
               showNotification("Approving USDC spend...");
               const txApprove = await usdc.approve(leaseBond.address, ethers.utils.parseUnits(amount, 6));
               await txApprove.wait(); 
-              
               showNotification("Processing purchase...");
               const txBuy = await leaseBond.buy(ethers.utils.parseUnits(amount, 6));
               await txBuy.wait();
-
               showNotification("Lease token purchased successfully!");
-              // Re-fetch data after purchase
               connectAndLoadDashboard(); 
-          } catch (error) {
+            } catch (error) {
               console.error("Purchase failed:", error);
               showNotification(error.reason || "Purchase transaction failed.", true);
-          }
+            }
+        }
+
+        // --- Event Listeners Setup ---
+        connectWalletBtn.addEventListener('click', () => {
+            if (typeof window.ethereum !== 'undefined') {
+                connectAndLoadDashboard();
+            } else {
+                showNotification("No wallet detected. Please install MetaMask.", true);
+                walletInstructions.textContent = "No web3 wallet detected. Please install a wallet like MetaMask to continue.";
+                connectWalletBtn.textContent = "Install MetaMask";
+                connectWalletBtn.onclick = () => { window.open("https://metamask.io/download/", "_blank"); };
+            }
         });
-    }
+        
+        depositAmountInput.addEventListener('input', () => {
+            depositBtn.disabled = true;
+            depositBtn.classList.add('opacity-50', 'cursor-not-allowed');
+        });
 
-    // --- Run the application ---
-    window.addEventListener("load", main);
-
+        approveDepositBtn.addEventListener('click', handleApproveDeposit);
+        depositBtn.addEventListener('click', handleDeposit);
+        vaultClaimYieldBtn.addEventListener('click', handleVaultClaim);
+        vaultCompoundYieldBtn.addEventListener('click', handleVaultCompound);
+        vaultWithdrawAllBtn.addEventListener('click', handleVaultWithdraw);
+        buyLeaseTokenBtn.addEventListener('click', handleBuyLeaseToken);
+    });
   </script>
 </body>
 </html>
