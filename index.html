@@ -115,122 +115,126 @@
 
 
   <script>
-    // --- ABIs and Contract Addresses ---
-    const srevAbi = [{"constant":true,"inputs":[{"name":"owner","type":"address"}],"name":"balanceOf","outputs":[{"name":"","type":"uint256"}],"type":"function"}];
-    const leaseBondAbi = [
-      {"constant":true,"inputs":[{"name":"owner","type":"address"}],"name":"balanceOf","outputs":[{"name":"","type":"uint256"}],"type":"function"},
-      {"inputs":[{"name":"amount","type":"uint256"}],"name":"buy","outputs":[],"stateMutability":"nonpayable","type":"function"}
-    ];
-    const rewardAbi = [
-      {"inputs":[],"name":"viewRewardPoolBalance","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
-      {"inputs":[{"internalType":"address","name":"account","type":"address"}],"name":"viewPending","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"}
-    ];
-    const erc20Abi = [
-      "function approve(address spender, uint256 amount) external returns (bool)",
-      "function balanceOf(address owner) view returns (uint256)",
-      "function allowance(address owner, address spender) view returns (uint256)"
-    ];
-    const investorVaultAbi = [{"inputs":[{"internalType":"address","name":"_usdc","type":"address"}],"stateMutability":"nonpayable","type":"constructor"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"investor","type":"address"},{"indexed":false,"internalType":"uint256","name":"amount","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"sharesMinted","type":"uint256"}],"name":"Deposited","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"oldKernel","type":"address"},{"indexed":true,"internalType":"address","name":"newKernel","type":"address"}],"name":"KernelUpdated","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"previousOwner","type":"address"},{"indexed":true,"internalType":"address","name":"newOwner","type":"address"}],"name":"OwnershipTransferred","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"investor","type":"address"},{"indexed":false,"internalType":"uint256","name":"amount","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"sharesBurned","type":"uint256"}],"name":"Withdrawn","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"investor","type":"address"},{"indexed":false,"internalType":"uint256","name":"amount","type":"uint256"}],"name":"YieldClaimed","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"investor","type":"address"},{"indexed":false,"internalType":"uint256","name":"amount","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"newShares","type":"uint256"}],"name":"YieldCompounded","type":"event"},{"inputs":[],"name":"LOCKUP_PERIOD","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address[]","name":"investors","type":"address[]"}],"name":"batchClaimYield","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address[]","name":"investors","type":"address[]"}],"name":"batchWithdraw","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"claimYield","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"investor","type":"address"}],"name":"claimableYield","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"","type":"address"}],"name":"claimedYield","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"compoundYield","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"deposit","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"","type":"address"}],"name":"depositTimestamps","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"fundKernel","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"investor","type":"address"}],"name":"getInvestorInfo","outputs":[{"internalType":"uint256","name":"share","type":"uint256"},{"internalType":"uint256","name":"claimable","type":"uint256"},{"internalType":"uint256","name":"claimed","type":"uint256"},{"internalType":"uint256","name":"unlockTime","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"getVaultTotals","outputs":[{"internalType":"uint256","name":"totalUSDC","type":"uint256"},{"internalType":"uint256","name":"totalSharesMinted","type":"uint256"},{"internalType":"uint256","name":"totalYield","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"kernel","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"owner","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"receiveYield","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"renounceOwnership","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"_kernel","type":"address"}],"name":"setKernel","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"","type":"address"}],"name":"shares","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"totalDeposits","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"totalShares","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"totalYieldDistributed","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"newOwner","type":"address"}],"name":"transferOwnership","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"usdc","outputs":[{"internalType":"contract IERC20","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"shareAmount","type":"uint256"}],"name":"withdraw","outputs":[],"stateMutability":"nonpayable","type":"function"}];
+    // --- App Main Function ---
+    // FIX: Encapsulate the entire logic in a main function that runs on window load
+    // This prevents race conditions and ensures all elements are available.
+    async function main() {
+        // --- ABIs and Contract Addresses ---
+        const srevAbi = [{"constant":true,"inputs":[{"name":"owner","type":"address"}],"name":"balanceOf","outputs":[{"name":"","type":"uint256"}],"type":"function"}];
+        const leaseBondAbi = [
+          {"constant":true,"inputs":[{"name":"owner","type":"address"}],"name":"balanceOf","outputs":[{"name":"","type":"uint256"}],"type":"function"},
+          {"inputs":[{"name":"amount","type":"uint256"}],"name":"buy","outputs":[],"stateMutability":"nonpayable","type":"function"}
+        ];
+        const rewardAbi = [
+          {"inputs":[],"name":"viewRewardPoolBalance","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
+          {"inputs":[{"internalType":"address","name":"account","type":"address"}],"name":"viewPending","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"}
+        ];
+        const erc20Abi = [
+          "function approve(address spender, uint256 amount) external returns (bool)",
+          "function balanceOf(address owner) view returns (uint256)",
+          "function allowance(address owner, address spender) view returns (uint256)"
+        ];
+        const investorVaultAbi = [{"inputs":[{"internalType":"address","name":"_usdc","type":"address"}],"stateMutability":"nonpayable","type":"constructor"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"investor","type":"address"},{"indexed":false,"internalType":"uint256","name":"amount","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"sharesMinted","type":"uint256"}],"name":"Deposited","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"oldKernel","type":"address"},{"indexed":true,"internalType":"address","name":"newKernel","type":"address"}],"name":"KernelUpdated","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"previousOwner","type":"address"},{"indexed":true,"internalType":"address","name":"newOwner","type":"address"}],"name":"OwnershipTransferred","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"investor","type":"address"},{"indexed":false,"internalType":"uint256","name":"amount","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"sharesBurned","type":"uint256"}],"name":"Withdrawn","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"investor","type":"address"},{"indexed":false,"internalType":"uint256","name":"amount","type":"uint256"}],"name":"YieldClaimed","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"investor","type":"address"},{"indexed":false,"internalType":"uint256","name":"amount","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"newShares","type":"uint256"}],"name":"YieldCompounded","type":"event"},{"inputs":[],"name":"LOCKUP_PERIOD","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address[]","name":"investors","type":"address[]"}],"name":"batchClaimYield","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address[]","name":"investors","type":"address[]"}],"name":"batchWithdraw","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"claimYield","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"investor","type":"address"}],"name":"claimableYield","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"","type":"address"}],"name":"claimedYield","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"compoundYield","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"deposit","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"","type":"address"}],"name":"depositTimestamps","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"fundKernel","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"investor","type":"address"}],"name":"getInvestorInfo","outputs":[{"internalType":"uint256","name":"share","type":"uint256"},{"internalType":"uint256","name":"claimable","type":"uint256"},{"internalType":"uint256","name":"claimed","type":"uint256"},{"internalType":"uint256","name":"unlockTime","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"getVaultTotals","outputs":[{"internalType":"uint256","name":"totalUSDC","type":"uint256"},{"internalType":"uint256","name":"totalSharesMinted","type":"uint256"},{"internalType":"uint256","name":"totalYield","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"kernel","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"owner","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"receiveYield","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"renounceOwnership","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"_kernel","type":"address"}],"name":"setKernel","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"","type":"address"}],"name":"shares","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"totalDeposits","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"totalShares","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"totalYieldDistributed","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"newOwner","type":"address"}],"name":"transferOwnership","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"usdc","outputs":[{"internalType":"contract IERC20","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"shareAmount","type":"uint256"}],"name":"withdraw","outputs":[],"stateMutability":"nonpayable","type":"function"}];
 
-    const usdcAddress = "0xaf88d065e77c8cC2239327C5EDb3A432268e5831";
-    const srevAddress = "0x2F745Da2FA453ee76c756fADcc081f59284B2a40";
-    const leaseAddress = "0xd0dc6eeE2dD77d7A4C09108993d0c7ad6a0b60E3";
-    const rewardAddress = "0x71f618EFb0422687e5B2ad9cD973aDACb645D9DE";
-    const investorVaultAddress = "0x1a51f1966d35661573908DC913307076d937aa90"; 
+        const usdcAddress = "0xaf88d065e77c8cC2239327C5EDb3A432268e5831";
+        const srevAddress = "0x2F745Da2FA453ee76c756fADcc081f59284B2a40";
+        const leaseAddress = "0xd0dc6eeE2dD77d7A4C09108993d0c7ad6a0b60E3";
+        const rewardAddress = "0x71f618EFb0422687e5B2ad9cD973aDACb645D9DE";
+        const investorVaultAddress = "0x1a51f1966d35661573908DC913307076d937aa90"; 
 
-    // --- Ethers.js Setup ---
-    let provider;
-    let signer;
+        // --- Ethers.js Setup ---
+        let provider;
+        let signer;
 
-    // --- UI Elements ---
-    const walletEl = document.getElementById("wallet");
-    const srevBalanceEl = document.getElementById("srev-balance");
-    const leaseTokenEl = document.getElementById("lease-token");
-    const rewardPoolEl = document.getElementById("reward-pool");
-    const pendingRewardsEl = document.getElementById("pending-rewards");
-    const notificationToast = document.getElementById('notification-toast');
-    const notificationMessage = document.getElementById('notification-message');
-    const connectWalletContainer = document.getElementById('connect-wallet-container');
-    const connectWalletBtn = document.getElementById('connect-wallet-btn');
-    const walletInstructions = document.getElementById('wallet-instructions');
-    const dashboardContent = document.getElementById('dashboard-content');
-    const vaultClaimableYieldEl = document.getElementById('vault-claimable-yield');
+        // --- UI Elements ---
+        const walletEl = document.getElementById("wallet");
+        const srevBalanceEl = document.getElementById("srev-balance");
+        const leaseTokenEl = document.getElementById("lease-token");
+        const rewardPoolEl = document.getElementById("reward-pool");
+        const pendingRewardsEl = document.getElementById("pending-rewards");
+        const notificationToast = document.getElementById('notification-toast');
+        const notificationMessage = document.getElementById('notification-message');
+        const connectWalletContainer = document.getElementById('connect-wallet-container');
+        const connectWalletBtn = document.getElementById('connect-wallet-btn');
+        const walletInstructions = document.getElementById('wallet-instructions');
+        const dashboardContent = document.getElementById('dashboard-content');
+        const vaultClaimableYieldEl = document.getElementById('vault-claimable-yield');
 
-    // UI Elements for Investor Vault
-    const depositAmountInput = document.getElementById('deposit-amount');
-    const approveDepositBtn = document.getElementById('approve-deposit-btn');
-    const depositBtn = document.getElementById('deposit-btn');
-    const vaultClaimYieldBtn = document.getElementById('vault-claim-yield-btn');
-    const vaultCompoundYieldBtn = document.getElementById('vault-compound-yield-btn');
-    const vaultWithdrawAllBtn = document.getElementById('vault-withdraw-all-btn');
+        // UI Elements for Investor Vault
+        const depositAmountInput = document.getElementById('deposit-amount');
+        const approveDepositBtn = document.getElementById('approve-deposit-btn');
+        const depositBtn = document.getElementById('deposit-btn');
+        const vaultClaimYieldBtn = document.getElementById('vault-claim-yield-btn');
+        const vaultCompoundYieldBtn = document.getElementById('vault-compound-yield-btn');
+        const vaultWithdrawAllBtn = document.getElementById('vault-withdraw-all-btn');
 
 
-    /**
-     * Shows a notification message at the bottom of the screen.
-     */
-    function showNotification(message, isError = false) {
-        notificationMessage.textContent = message;
-        notificationToast.className = `px-4 py-2 rounded-lg shadow-lg text-white ${isError ? 'bg-red-600' : 'bg-gray-700'}`;
-        notificationToast.classList.add('show');
+        /**
+         * Shows a notification message at the bottom of the screen.
+         */
+        function showNotification(message, isError = false) {
+            notificationMessage.textContent = message;
+            notificationToast.className = `px-4 py-2 rounded-lg shadow-lg text-white ${isError ? 'bg-red-600' : 'bg-gray-700'}`;
+            notificationToast.classList.add('show');
+            
+            setTimeout(() => {
+                notificationToast.classList.remove('show');
+            }, 3000);
+        }
+
+        /**
+         * Connects to the wallet, fetches data and populates the dashboard.
+         */
+        async function connectAndLoadDashboard() {
+          try {
+            provider = new ethers.providers.Web3Provider(window.ethereum, "any");
+
+            await provider.send("eth_requestAccounts", []);
+            signer = provider.getSigner();
+            const user = await signer.getAddress();
+            walletEl.innerText = `${user.substring(0, 6)}...${user.substring(user.length - 4)}`;
+
+            const srev = new ethers.Contract(srevAddress, srevAbi, provider);
+            const lease = new ethers.Contract(leaseAddress, leaseBondAbi, provider);
+            const reward = new ethers.Contract(rewardAddress, rewardAbi, provider);
+            const vault = new ethers.Contract(investorVaultAddress, investorVaultAbi, provider);
+
+            // Fetch and display balances
+            const [srevBal, leaseBal, pool, pending, vaultYield] = await Promise.all([
+                srev.balanceOf(user),
+                lease.balanceOf(user),
+                reward.viewRewardPoolBalance(),
+                reward.viewPending(user),
+                vault.claimableYield(user)
+            ]);
+            
+            const formattedSrev = parseFloat(ethers.utils.formatUnits(srevBal, 18));
+            srevBalanceEl.innerText = formattedSrev.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+
+            leaseTokenEl.innerText = leaseBal.toString();
+
+            const formattedPool = parseFloat(ethers.utils.formatUnits(pool, 6));
+            rewardPoolEl.innerText = formattedPool.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) + " USDC";
+            
+            const formattedPending = parseFloat(ethers.utils.formatUnits(pending, 18));
+            pendingRewardsEl.innerText = formattedPending.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) + " USDC";
+            
+            const formattedVaultYield = parseFloat(ethers.utils.formatUnits(vaultYield, 6));
+            vaultClaimableYieldEl.innerText = formattedVaultYield.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+
+
+            // Show dashboard and hide connect prompt
+            connectWalletContainer.classList.add('hidden');
+            dashboardContent.classList.remove('hidden');
+
+          } catch (error) {
+            console.error("Connection/data fetch failed:", error);
+            showNotification("Failed to connect to wallet or fetch data.", true);
+          }
+        }
         
-        setTimeout(() => {
-            notificationToast.classList.remove('show');
-        }, 3000);
-    }
-
-    /**
-     * Connects to the wallet, fetches data and populates the dashboard.
-     */
-    async function connectAndLoadDashboard() {
-      try {
-        provider = new ethers.providers.Web3Provider(window.ethereum, "any");
-
-        await provider.send("eth_requestAccounts", []);
-        signer = provider.getSigner();
-        const user = await signer.getAddress();
-        walletEl.innerText = `${user.substring(0, 6)}...${user.substring(user.length - 4)}`;
-
-        const srev = new ethers.Contract(srevAddress, srevAbi, provider);
-        const lease = new ethers.Contract(leaseAddress, leaseBondAbi, provider);
-        const reward = new ethers.Contract(rewardAddress, rewardAbi, provider);
-        const vault = new ethers.Contract(investorVaultAddress, investorVaultAbi, provider);
-
-        // Fetch and display balances
-        const [srevBal, leaseBal, pool, pending, vaultYield] = await Promise.all([
-            srev.balanceOf(user),
-            lease.balanceOf(user),
-            reward.viewRewardPoolBalance(),
-            reward.viewPending(user),
-            vault.claimableYield(user)
-        ]);
+        // --- Event Listeners Setup ---
         
-        const formattedSrev = parseFloat(ethers.utils.formatUnits(srevBal, 18));
-        srevBalanceEl.innerText = formattedSrev.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
-
-        leaseTokenEl.innerText = leaseBal.toString();
-
-        const formattedPool = parseFloat(ethers.utils.formatUnits(pool, 6));
-        rewardPoolEl.innerText = formattedPool.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) + " USDC";
-        
-        const formattedPending = parseFloat(ethers.utils.formatUnits(pending, 18));
-        pendingRewardsEl.innerText = formattedPending.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) + " USDC";
-        
-        const formattedVaultYield = parseFloat(ethers.utils.formatUnits(vaultYield, 6));
-        vaultClaimableYieldEl.innerText = formattedVaultYield.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
-
-
-        // Show dashboard and hide connect prompt
-        connectWalletContainer.classList.add('hidden');
-        dashboardContent.classList.remove('hidden');
-
-      } catch (error) {
-        console.error("Connection/data fetch failed:", error);
-        showNotification("Failed to connect to wallet or fetch data.", true);
-      }
-    }
-    
-    // --- Event Listeners Setup ---
-    window.addEventListener("load", () => {
         // This is the primary click listener for connecting the wallet.
         connectWalletBtn.addEventListener('click', () => {
             if (typeof window.ethereum !== 'undefined') {
@@ -333,7 +337,6 @@
                 const user = await signer.getAddress();
                 
                 showNotification("Fetching your shares to withdraw...");
-                // FIX: Get the user's total shares first
                 const userShares = await vault.shares(user);
 
                 if (userShares.isZero()) {
@@ -341,7 +344,6 @@
                 }
 
                 showNotification("Withdrawing all funds...");
-                // FIX: Call withdraw with the user's total shares
                 const tx = await vault.withdraw(userShares);
                 await tx.wait();
                 showNotification("Withdrawal successful!", false);
@@ -388,7 +390,10 @@
               showNotification(error.reason || "Purchase transaction failed.", true);
           }
         });
-    });
+    }
+
+    // --- Run the application ---
+    window.addEventListener("load", main);
 
   </script>
 </body>
