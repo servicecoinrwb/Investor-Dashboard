@@ -3,162 +3,88 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Service Coin Investor Dashboard</title>
-  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <title>Investor Dashboard</title>
   <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+  <script defer src="abi.js"></script>
+  <script defer src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-black text-white min-h-screen font-sans">
-  <div class="max-w-4xl mx-auto p-6 space-y-8">
-    <h1 class="text-3xl font-bold">Investor Dashboard</h1>
+<body class="bg-black text-white font-sans">
+  <div class="max-w-4xl mx-auto p-6">
+    <h1 class="text-3xl font-bold mb-6">Investor Dashboard</h1>
 
-    <div class="bg-gray-800 rounded-xl p-6">
-      <p class="text-lg">Wallet: <span id="wallet">Not connected</span></p>
+    <div class="bg-gray-800 p-4 rounded mb-4">
+      <p><strong>Wallet:</strong> <span id="wallet">-</span></p>
       <p class="text-sm text-gray-400">View your verified holdings, staking receipts, and redemption timeline.</p>
     </div>
 
-    <div class="bg-gray-800 rounded-xl p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-      <div>
-        <h2 class="text-xl font-semibold">SREV Balance</h2>
-        <p id="srev-balance" class="text-2xl">0.00</p>
+    <div class="flex gap-4 mb-4">
+      <div class="bg-gray-800 p-4 rounded flex-1">
+        <p class="text-lg font-bold">SREV Balance</p>
+        <p id="srev-balance" class="text-2xl font-mono">0.00</p>
         <p class="text-sm text-gray-400">Auto-yielding USDC receipt</p>
       </div>
-      <div>
-        <h2 class="text-xl font-semibold">LeaseToken_2025</h2>
-        <p id="lease-count" class="text-2xl">0</p>
+      <div class="bg-gray-800 p-4 rounded flex-1">
+        <p class="text-lg font-bold">LeaseToken_2025</p>
+        <p id="lease-token" class="text-2xl font-mono">0</p>
         <p class="text-sm text-gray-400">$12 redeemable after maturity</p>
       </div>
     </div>
 
-    <div class="bg-gray-800 rounded-xl p-6">
-      <h2 class="text-xl font-semibold mb-2">USDC Yield Pool</h2>
-      <p class="text-gray-400 text-sm">Pool Balance: <span id="reward-pool">Loading...</span></p>
-      <p class="text-gray-400 text-sm">Your Pending Rewards: <span id="pending-rewards">Loading...</span></p>
+    <div class="bg-gray-800 p-4 rounded mb-4">
+      <p class="text-lg font-bold">USDC Yield Pool</p>
+      <p class="text-sm">Pool Balance: <span id="reward-pool">0.00 USDC</span></p>
+      <p class="text-sm">Your Pending Rewards: <span id="pending-rewards">0.00 USDC</span></p>
     </div>
 
-    <div class="flex flex-wrap gap-4 justify-center">
-      <button class="bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-4 rounded" onclick="claimYield()">
-        Claim Yield
-      </button>
-      <button class="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded" onclick="stakeSRV()">
-        Stake SRV
-      </button>
-      <button class="bg-yellow-500 hover:bg-yellow-600 text-white font-semibold py-2 px-4 rounded" onclick="unstakeSRV()">
-        Unstake SRV
-      </button>
-      <button class="bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-4 rounded" onclick="redeemLeaseToken()">
-        Redeem LeaseToken
-      </button>
-      <button class="bg-orange-500 hover:bg-orange-600 text-white font-semibold py-2 px-4 rounded" onclick="earlyRedeem()">
-        Early Redeem
-      </button>
+    <div class="flex flex-wrap gap-2">
+      <button id="claim" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">Claim Yield</button>
+      <button id="stake" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">Stake SRV</button>
+      <button id="unstake" class="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded">Unstake SRV</button>
+      <button id="redeemLeaseToken" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded">Redeem LeaseToken</button>
+      <button id="earlyRedeem" class="bg-white text-black font-bold py-2 px-4 rounded">Early Redeem</button>
+      <button id="buyLeaseToken" class="bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-2 px-4 rounded">Buy LeaseToken</button>
     </div>
   </div>
 
   <script>
-    const srevAbi = ["function balanceOf(address) view returns (uint256)"];
-    const leaseAbi = ["function balanceOf(address) view returns (uint256)", "function redeem()", "function earlyRedeem()"];
-    const rewardAbi = ["function claim()", "function viewRewardPoolBalance() view returns (uint256)", "function viewPending(address) view returns (uint256)"];
-    const stakingAbi = ["function stake(uint256)", "function unstake(uint256)", "function staked(address) view returns (uint256)"];
-
-    const srevAddress = "0x2f745da2fa453ee76c756fadcc081f59284b2a40";
-    const leaseAddress = "0xd0dc6eeE2dD77d7A4C09108993d0c7ad6a0b60E3";
-    const rewardAddress = "0x71f618EFb0422687e5B2ad9cD973aDACb645D9DE";
-    const stakingVault = "0x691e29E98ECDc5ae948355F30102cD4D637eddB7";
-
+    const provider = new ethers.providers.Web3Provider(window.ethereum, "any");
     let signer;
-
-    async function switchToArbitrum() {
-      try {
-        await window.ethereum.request({
-          method: 'wallet_switchEthereumChain',
-          params: [{ chainId: '0xa4b1' }]
-        });
-      } catch (err) {
-        alert("Please switch to Arbitrum One network");
-      }
-    }
+    const usdcAddress = "0xaf88d065e77c8cC2239327C5EDb3A432268e5831";
 
     async function init() {
-      if (!window.ethereum) return;
-      await switchToArbitrum();
-      const provider = new ethers.providers.Web3Provider(window.ethereum);
       await provider.send("eth_requestAccounts", []);
       signer = provider.getSigner();
-      const address = await signer.getAddress();
-      document.getElementById("wallet").innerText = address;
+      const user = await signer.getAddress();
+      document.getElementById("wallet").innerText = user;
 
-      const srev = new ethers.Contract(srevAddress, srevAbi, provider);
-      const lease = new ethers.Contract(leaseAddress, leaseAbi, provider);
-      const staking = new ethers.Contract(stakingVault, stakingAbi, provider);
-      const reward = new ethers.Contract(rewardAddress, rewardAbi, provider);
+      const srev = new ethers.Contract("0x2F745Da2FA453ee76c756fADcc081f59284B2a40", srevAbi, provider);
+      const lease = new ethers.Contract("0xd0dc6eeE2dD77d7A4C09108993d0c7ad6a0b60E3", leaseBondAbi, provider);
+      const reward = new ethers.Contract("0x71f618EFb0422687e5B2ad9cD973aDACb645D9DE", rewardAbi, provider);
 
-      const srevBal = await srev.balanceOf(address);
-      const leaseBal = await lease.balanceOf(address);
-      const stakedBal = await staking.staked(address);
-      const pending = await reward.viewPending(address);
+      const srevBal = await srev.balanceOf(user);
+      document.getElementById("srev-balance").innerText = (srevBal / 1e18).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+
+      const leaseBal = await lease.balanceOf(user);
+      document.getElementById("lease-token").innerText = leaseBal.toString();
+
       const pool = await reward.viewRewardPoolBalance();
-
-      document.getElementById("srev-balance").innerText = (srevBal / 1e18).toFixed(2);
-      document.getElementById("lease-count").innerText = leaseBal.toString();
-      document.getElementById("pending-rewards").innerText = (pending / 1e6).toFixed(2) + " USDC";
-      document.getElementById("reward-pool").innerText = (pool / 1e6).toFixed(2) + " USDC";
+      const pending = await reward.viewPending(user);
+      document.getElementById("reward-pool").innerText = (pool / 1e6).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) + " USDC";
+      document.getElementById("pending-rewards").innerText = (pending / 1e6).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) + " USDC";
     }
 
-    async function claimYield() {
-      const contract = new ethers.Contract(rewardAddress, rewardAbi, signer);
-      try {
-        const tx = await contract.claim();
-        alert("Claim initiated: " + tx.hash);
-      } catch (err) {
-        alert("Claim failed: " + err.message);
-      }
-    }
+    window.addEventListener("load", init);
 
-    async function stakeSRV() {
-      const amount = prompt("Enter SRV amount to stake:");
-      if (!amount) return;
-      const contract = new ethers.Contract(stakingVault, stakingAbi, signer);
-      try {
-        const tx = await contract.stake(ethers.utils.parseUnits(amount, 18));
-        alert("Staking initiated: " + tx.hash);
-      } catch (err) {
-        alert("Stake failed: " + err.message);
-      }
-    }
-
-    async function unstakeSRV() {
-      const amount = prompt("Enter SREV amount to unstake:");
-      if (!amount) return;
-      const contract = new ethers.Contract(stakingVault, stakingAbi, signer);
-      try {
-        const tx = await contract.unstake(ethers.utils.parseUnits(amount, 18));
-        alert("Unstake initiated: " + tx.hash);
-      } catch (err) {
-        alert("Unstake failed: " + err.message);
-      }
-    }
-
-    async function redeemLeaseToken() {
-      const lease = new ethers.Contract(leaseAddress, leaseAbi, signer);
-      try {
-        const tx = await lease.redeem();
-        alert("Redeem initiated: " + tx.hash);
-      } catch (err) {
-        alert("Redeem failed: " + err.message);
-      }
-    }
-
-    async function earlyRedeem() {
-      const lease = new ethers.Contract(leaseAddress, leaseAbi, signer);
-      try {
-        const tx = await lease.earlyRedeem();
-        alert("Early redeem initiated: " + tx.hash);
-      } catch (err) {
-        alert("Early redeem failed: " + err.message);
-      }
-    }
-
-    window.onload = init;
+    document.getElementById("buyLeaseToken").addEventListener("click", async () => {
+      if (!signer) return alert("Connect wallet first");
+      const leaseBond = new ethers.Contract("0xd0dc6eeE2dD77d7A4C09108993d0c7ad6a0b60E3", leaseBondAbi, signer);
+      const amount = prompt("Enter amount of USDC to spend:");
+      if (!amount || isNaN(amount)) return;
+      const usdc = new ethers.Contract(usdcAddress, erc20Abi, signer);
+      await usdc.approve(leaseBond.address, ethers.utils.parseUnits(amount, 6));
+      await leaseBond.buy(ethers.utils.parseUnits(amount, 6));
+      alert("Lease token purchased!");
+    });
   </script>
 </body>
 </html>
