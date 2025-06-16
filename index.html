@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>SRV Staking & PFLOW25 Hub</title>
+  <title>Service Coin Ecosystem</title>
   <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
@@ -27,7 +27,7 @@
 </head>
 <body class="bg-black text-white font-sans">
   <div class="max-w-4xl mx-auto p-6">
-    <h1 class="text-3xl font-bold mb-6">SRV Staking & PFLOW25 Hub</h1>
+    <h1 class="text-3xl font-bold mb-6">Service Coin Ecosystem</h1>
     
     <!-- Container for wallet connection prompt -->
     <div id="connect-wallet-container" class="text-center bg-gray-800 p-8 rounded-lg shadow-md">
@@ -163,6 +163,13 @@
         const vaultClaimYieldBtn = document.getElementById('vault-claim-yield-btn');
         const vaultCompoundYieldBtn = document.getElementById('vault-compound-yield-btn');
         const vaultWithdrawAllBtn = document.getElementById('vault-withdraw-all-btn');
+        
+        // Staking & LeaseToken Buttons
+        const claimBtn = document.getElementById('claim');
+        const stakeBtn = document.getElementById('stake');
+        const unstakeBtn = document.getElementById('unstake');
+        const redeemLeaseTokenBtn = document.getElementById('redeemLeaseToken');
+        const earlyRedeemBtn = document.getElementById('earlyRedeem');
         const buyLeaseTokenBtn = document.getElementById('buyLeaseToken');
 
 
@@ -331,6 +338,33 @@
             }
         }
 
+        // --- NEW: Placeholder Action Handlers for Staking/LeaseToken ---
+        function handleStakingClaim() {
+            showNotification("Staking claim function not implemented yet.");
+            // TODO: Add your staking claim logic here
+        }
+
+        function handleStakeSrv() {
+            showNotification("Stake SRV function not implemented yet.");
+            // TODO: Add your SRV staking logic here
+        }
+
+        function handleUnstakeSrv() {
+            showNotification("Unstake SRV function not implemented yet.");
+            // TODO: Add your SRV unstaking logic here
+        }
+
+        function handleRedeemLeaseToken() {
+            showNotification("Redeem PFLOW25 function not implemented yet.");
+            // TODO: Add your lease token redemption logic here
+        }
+
+        function handleEarlyRedeem() {
+            showNotification("Early redeem function not implemented yet.");
+            // TODO: Add your early redemption logic here
+        }
+
+
         // --- Event Listeners Setup ---
         connectWalletBtn.addEventListener('click', () => {
             if (typeof window.ethereum !== 'undefined') {
@@ -348,12 +382,21 @@
             depositBtn.classList.add('opacity-50', 'cursor-not-allowed');
         });
 
+        // Investor Vault listeners
         approveDepositBtn.addEventListener('click', handleApproveDeposit);
         depositBtn.addEventListener('click', handleDeposit);
         vaultClaimYieldBtn.addEventListener('click', handleVaultClaim);
         vaultCompoundYieldBtn.addEventListener('click', handleVaultCompound);
         vaultWithdrawAllBtn.addEventListener('click', handleVaultWithdraw);
+        
+        // Staking and LeaseToken listeners
         buyLeaseTokenBtn.addEventListener('click', handleBuyLeaseToken);
+        claimBtn.addEventListener('click', handleStakingClaim);
+        stakeBtn.addEventListener('click', handleStakeSrv);
+        unstakeBtn.addEventListener('click', handleUnstakeSrv);
+        redeemLeaseTokenBtn.addEventListener('click', handleRedeemLeaseToken);
+        earlyRedeemBtn.addEventListener('click', handleEarlyRedeem);
+
     });
   </script>
 </body>
