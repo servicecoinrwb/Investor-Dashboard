@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Service Coin Ecosystem Hub</title>
+  <title>Service Coin Ecosystem</title>
   <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
@@ -27,7 +27,7 @@
 </head>
 <body class="bg-black text-white font-sans">
   <div class="max-w-4xl mx-auto p-6">
-    <h1 class="text-3xl font-bold mb-6">Service Coin Ecosystem Hub</h1>
+    <h1 class="text-3xl font-bold mb-6">Service Coin Ecosystem</h1>
     
     <!-- Container for wallet connection prompt -->
     <div id="connect-wallet-container" class="text-center bg-gray-800 p-8 rounded-lg shadow-md">
@@ -52,7 +52,7 @@
             <p class="text-sm text-gray-400">Auto-yielding USDC receipt</p>
           </div>
           <div class="bg-gray-800 p-4 rounded-lg shadow-md">
-            <p class="text-lg font-bold">LeaseToken_2025</p>
+            <p class="text-lg font-bold">PFLOW25</p>
             <p id="lease-token" class="text-2xl font-mono">0</p>
             <p class="text-sm text-gray-400">$12 redeemable after maturity</p>
           </div>
@@ -69,14 +69,27 @@
           <p class="text-sm">Pool Balance: <span id="reward-pool">0.00 USDC</span></p>
           <p class="text-sm">Your Pending Rewards: <span id="pending-rewards">0.00 USDC</span></p>
         </div>
+
+        <!-- Staking and LeaseToken Actions -->
+        <div class="bg-gray-800 p-4 rounded-lg mb-4 shadow-md">
+            <h3 class="text-xl font-bold mb-4">SRV Staking & PFLOW25</h3>
+            <div class="flex flex-wrap gap-2">
+              <button id="claim" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">Claim Yield (Staking)</button>
+              <button id="stake" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">Stake SRV</button>
+              <button id="unstake" class="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded-lg transition-colors">Unstake SRV</button>
+              <button id="redeemLeaseToken" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">Redeem PFLOW25</button>
+              <button id="earlyRedeem" class="bg-white text-black font-bold py-2 px-4 rounded-lg transition-colors">Early Redeem</button>
+              <button id="buyLeaseToken" class="bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-2 px-4 rounded-lg transition-colors">Buy PFLOW25</button>
+            </div>
+        </div>
         
         <!-- Investor Vault Actions -->
         <div class="bg-gray-800 p-4 rounded-lg mb-4 shadow-md">
-            <h3 class="text-xl font-bold mb-4">Investor Vault Actions</h3>
+            <h3 class="text-xl font-bold mb-4">Real Yield System</h3>
             
             <!-- Deposit Section -->
             <div class="mb-6 border-b border-gray-700 pb-6">
-                <label for="deposit-amount" class="block text-sm font-medium text-gray-300 mb-2">Deposit USDC to Investor Vault</label>
+                <label for="deposit-amount" class="block text-sm font-medium text-gray-300 mb-2">Deposit USDC to Real Yield System</label>
                 <div class="flex flex-col sm:flex-row gap-2">
                     <input type="text" id="deposit-amount" placeholder="USDC Amount" class="bg-gray-900 border border-gray-700 text-white rounded-lg p-2 flex-grow focus:ring-2 focus:ring-indigo-500 focus:outline-none">
                     <button id="approve-deposit-btn" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">Approve</button>
@@ -91,17 +104,6 @@
                 <button id="vault-compound-yield-btn" class="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded-lg transition-colors">Compound Yield</button>
                 <button id="vault-withdraw-all-btn" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">Withdraw All</button>
             </div>
-        </div>
-
-
-        <!-- Existing Action Buttons -->
-        <div class="flex flex-wrap gap-2">
-          <button id="claim" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">Claim Yield (Staking)</button>
-          <button id="stake" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">Stake SRV</button>
-          <button id="unstake" class="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded-lg transition-colors">Unstake SRV</button>
-          <button id="redeemLeaseToken" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">Redeem LeaseToken</button>
-          <button id="earlyRedeem" class="bg-white text-black font-bold py-2 px-4 rounded-lg transition-colors">Early Redeem</button>
-          <button id="buyLeaseToken" class="bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-2 px-4 rounded-lg transition-colors">Buy LeaseToken</button>
         </div>
     </div>
   </div>
