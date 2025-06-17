@@ -66,19 +66,11 @@
                   </div>
                 </div>
 
-                 <!-- PFLOW25 Actions -->
+                <!-- Staking and LeaseToken Actions -->
                 <div class="bg-gray-800 p-4 rounded-lg shadow-md">
                     <h3 class="text-xl font-bold mb-4">PFLOW25 Actions</h3>
-                     <div class="mb-6 border-b border-gray-700 pb-6">
-                        <label for="buy-pflow-amount" class="block text-sm font-medium text-gray-300 mb-2">Buy PFLOW25 (90-Day Lock)</label>
-                        <div class="flex flex-col sm:flex-row gap-2">
-                            <input type="text" id="buy-pflow-amount" placeholder="USDC Amount" class="bg-gray-900 border border-gray-700 text-white rounded-lg p-2 flex-grow focus:ring-2 focus:ring-indigo-500 focus:outline-none">
-                            <button id="approve-pflow-btn" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">Approve USDC</button>
-                            <button id="buy-pflow-btn" class="bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-2 px-4 rounded-lg transition-colors opacity-50 cursor-not-allowed" disabled>Buy PFLOW25</button>
-                        </div>
-                        <p class="text-xs text-gray-500 mt-2">First approve, then buy.</p>
-                    </div>
                     <div class="flex flex-wrap gap-2">
+                      <button id="buy-pflow-btn" class="bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-2 px-4 rounded-lg transition-colors">Buy PFLOW25</button>
                       <button id="redeem-pflow-btn" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg transition-colors opacity-50 cursor-not-allowed" disabled>Redeem PFLOW25</button>
                       <button id="early-redeem-pflow-btn" class="bg-white text-black font-bold py-2 px-4 rounded-lg transition-colors">Early Redeem</button>
                     </div>
@@ -186,7 +178,6 @@
         const stakingVaultAddress = "0x691e29E98ECDc5ae948355F30102cD4D637eddB7";
         const investorVaultAddress = "0x1a51f1966d35661573908DC913307076d937aa90";
         const yieldVaultAddress = "0x44D64E1B9dC5F90b389900Da24B8de631222432C";
-        // FIX: erc20Abi is defined once in the correct scope.
         const erc20Abi = [
             "function approve(address spender, uint256 amount) external returns (bool)",
             "function balanceOf(address owner) view returns (uint256)",
@@ -222,13 +213,9 @@
         const stakeBtn = document.getElementById('stake-btn');
         const unstakeBtn = document.getElementById('unstake-btn');
         const claimStakingYieldBtn = document.getElementById('claim-staking-yield-btn');
-        
-        // PFLOW Elements
-        const buyPflowAmountInput = document.getElementById('buy-pflow-amount');
-        const approvePflowBtn = document.getElementById('approve-pflow-btn');
-        const buyPflowBtn = document.getElementById('buy-pflow-btn');
-        const redeemPflowBtn = document.getElementById('redeem-pflow-btn');
-        const earlyRedeemPflowBtn = document.getElementById('early-redeem-pflow-btn');
+        const redeemLeaseTokenBtn = document.getElementById('redeem-pflow-btn');
+        const earlyRedeemBtn = document.getElementById('early-redeem-pflow-btn');
+        const buyLeaseTokenBtn = document.getElementById('buy-pflow-btn');
         const pflowMaturityDateEl = document.getElementById('pflow-maturity-date');
 
 
@@ -493,40 +480,34 @@
             }
         }
         
-        async function handleApprovePflow() {
-            if (!signer) return showNotification("Please connect your wallet first.", true);
-            const amountStr = buyPflowAmountInput.value;
-             if (!amountStr || isNaN(amountStr) || parseFloat(amountStr) <= 0) {
-                return showNotification("Invalid USDC amount.", true);
-            }
-            const usdc = new ethers.Contract(usdcAddress, erc20Abi, signer);
-             await handleContractInteraction(
-                () => usdc.approve(leaseAddress, ethers.utils.parseUnits(amountStr, 6)),
-                "USDC Approved! You can now buy PFLOW25.",
-                "Approving USDC"
-            );
-            buyPflowBtn.disabled = false;
-            buyPflowBtn.classList.remove('opacity-50', 'cursor-not-allowed');
-        }
-
         async function handleBuyPflow() {
             if (!signer) return showNotification("Please connect your wallet first.", true);
-            const amountStr = buyPflowAmountInput.value;
+            const amountStr = prompt("Enter amount of USDC to spend:");
             if (!amountStr || isNaN(amountStr) || parseFloat(amountStr) <= 0) {
                 return showNotification("Invalid USDC amount.", true);
             }
+            const durationStr = prompt("Enter lock-up duration in days (e.g., 90):");
+            if (!durationStr || isNaN(durationStr) || parseInt(durationStr) <= 0) {
+                return showNotification("Invalid duration.", true);
+            }
             
-            const durationInSeconds = 90 * 86400;
+            const durationInSeconds = parseInt(durationStr) * 86400; // 60 * 60 * 24
 
             const leaseBond = new ethers.Contract(leaseAddress, leaseBondAbi, signer);
-            await handleContractInteraction(
-                () => leaseBond.buy(ethers.utils.parseUnits(amountStr, 6), durationInSeconds), 
-                "PFLOW25 purchased successfully!", 
-                "Processing purchase"
-            );
-            buyPflowAmountInput.value = "";
-            buyPflowBtn.disabled = true;
-            buyPflowBtn.classList.add('opacity-50', 'cursor-not-allowed');
+            const usdc = new ethers.Contract(usdcAddress, erc20Abi, signer);
+            showNotification("Approving USDC spend...");
+            try {
+                const txApprove = await usdc.approve(leaseAddress, ethers.utils.parseUnits(amountStr, 6));
+                await txApprove.wait(); 
+                await handleContractInteraction(
+                    () => leaseBond.buy(ethers.utils.parseUnits(amountStr, 6), durationInSeconds), 
+                    "PFLOW25 purchased successfully!", 
+                    "Processing purchase"
+                );
+            } catch (error) {
+                console.error("Purchase failed:", error);
+                showNotification(error.reason || "Purchase transaction failed.", true);
+            }
         }
 
         async function handleRedeemPflow() {
@@ -598,11 +579,6 @@
             stakeBtn.disabled = true;
             stakeBtn.classList.add('opacity-50', 'cursor-not-allowed');
         });
-        
-        buyPflowAmountInput.addEventListener('input', () => {
-            buyPflowBtn.disabled = true;
-            buyPflowBtn.classList.add('opacity-50', 'cursor-not-allowed');
-        });
 
         approveDepositBtn.addEventListener('click', handleApproveDeposit);
         depositBtn.addEventListener('click', handleDeposit);
@@ -615,10 +591,9 @@
         stakeBtn.addEventListener('click', handleStakeSrv);
         unstakeBtn.addEventListener('click', handleUnstakeSrv);
         
-        approvePflowBtn.addEventListener('click', handleApprovePflow);
-        buyPflowBtn.addEventListener('click', handleBuyPflow);
-        redeemPflowBtn.addEventListener('click', handleRedeemPflow);
-        earlyRedeemPflowBtn.addEventListener('click', handleEarlyRedeemPflow);
+        buyLeaseTokenBtn.addEventListener('click', handleBuyPflow);
+        redeemLeaseTokenBtn.addEventListener('click', handleRedeemPflow);
+        earlyRedeemBtn.addEventListener('click', handleEarlyRedeemPflow);
 
     });
   </script>
