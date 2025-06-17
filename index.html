@@ -63,8 +63,16 @@
                 <!-- Staking and LeaseToken Actions -->
                 <div class="bg-gray-800 p-4 rounded-lg shadow-md">
                     <h3 class="text-xl font-bold mb-4">SRV Staking & PFLOW25 Actions</h3>
+                    <div class="mb-6 border-b border-gray-700 pb-6">
+                        <label for="stake-amount-input" class="block text-sm font-medium text-gray-300 mb-2">Stake SRV</label>
+                        <div class="flex flex-col sm:flex-row gap-2">
+                            <input type="text" id="stake-amount-input" placeholder="SRV Amount" class="bg-gray-900 border border-gray-700 text-white rounded-lg p-2 flex-grow focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                            <button id="approve-stake-btn" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">Approve</button>
+                            <button id="stake-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition-colors opacity-50 cursor-not-allowed" disabled>Stake</button>
+                        </div>
+                         <p class="text-xs text-gray-500 mt-2">First approve, then stake.</p>
+                    </div>
                     <div class="flex flex-wrap gap-2">
-                      <button id="stake" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">Stake SRV</button>
                       <button id="unstake" class="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded-lg transition-colors">Unstake SRV</button>
                       <button id="redeemLeaseToken" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">Redeem PFLOW25</button>
                       <button id="earlyRedeem" class="bg-white text-black font-bold py-2 px-4 rounded-lg transition-colors">Early Redeem</button>
@@ -180,14 +188,15 @@
         const vaultCompoundYieldBtn = document.getElementById('vault-compound-yield-btn');
         const vaultWithdrawAllBtn = document.getElementById('vault-withdraw-all-btn');
         
-        const stakeBtn = document.getElementById('stake');
+        const stakeBtn = document.getElementById('stake-btn');
         const unstakeBtn = document.getElementById('unstake');
         const claimStakingYieldBtn = document.getElementById('claim-staking-yield-btn');
         const redeemLeaseTokenBtn = document.getElementById('redeemLeaseToken');
         const earlyRedeemBtn = document.getElementById('earlyRedeem');
         const buyLeaseTokenBtn = document.getElementById('buyLeaseToken');
+        const approveStakeBtn = document.getElementById('approve-stake-btn');
+        const stakeAmountInput = document.getElementById('stake-amount-input');
 
-        // Platform & Staking Totals UI Elements
         const platformInvestorVaultBalanceEl = document.getElementById('platform-investor-vault-balance');
         const platformTotalDepositedEl = document.getElementById('platform-total-deposited');
         const platformYieldVaultBalanceEl = document.getElementById('platform-yield-vault-balance');
@@ -287,7 +296,7 @@
             if (!amount || isNaN(amount) || parseFloat(amount) <= 0) {
                 return showNotification("Please enter a valid amount.", true);
             }
-            const usdc = new ethers.Contract(usdcAddress, erc20Abi, signer);
+            const usdc = new ethers.Contract(usdcAddress, srevAbi, signer);
             await handleContractInteraction(
                 () => usdc.approve(investorVaultAddress, ethers.utils.parseUnits(amount, 6)),
                 "Approval successful! You can now deposit.",
@@ -344,7 +353,7 @@
                 return;
             }
             const leaseBond = new ethers.Contract(leaseAddress, leaseBondAbi, signer);
-            const usdc = new ethers.Contract(usdcAddress, erc20Abi, signer);
+            const usdc = new ethers.Contract(usdcAddress, srevAbi, signer);
             showNotification("Approving USDC spend...");
             try {
                 const txApprove = await usdc.approve(leaseAddress, ethers.utils.parseUnits(amount, 6));
@@ -361,46 +370,41 @@
             await handleContractInteraction(() => rewardDistributor.claim(), "Staking rewards claimed!", "Claiming staking rewards");
         }
 
-        async function handleStakeSrv() {
-            if (!signer) return showNotification("Please connect your wallet first.", true);
-            
+        async function handleApproveStake() {
+             if (!signer) return showNotification("Please connect your wallet first.", true);
+            const amount = stakeAmountInput.value;
+            if (!amount || isNaN(amount) || parseFloat(amount) <= 0) {
+                return showNotification("Please enter a valid amount.", true);
+            }
             try {
                 const stakingContract = new ethers.Contract(stakingVaultAddress, stakingAbi, signer);
-                const user = await signer.getAddress();
-
-                // Get the correct SRV token address from the staking vault
                 const srvTokenAddress = await stakingContract.SRV();
-                const srvTokenContract = new ethers.Contract(srvTokenAddress, erc20Abi, signer);
+                const srvTokenContract = new ethers.Contract(srvTokenAddress, srevAbi, signer);
                 
-                showNotification("Checking your SRV balance...");
-                const srvBalance = await srvTokenContract.balanceOf(user);
-                const srvBalanceFormatted = ethers.utils.formatUnits(srvBalance, 18);
-                
-                if (srvBalance.isZero()) {
-                    return showNotification("You have no SRV to stake.", true);
-                }
-
-                const amount = prompt(`Enter amount of SRV to stake (Available: ${srvBalanceFormatted}):`);
-                if (!amount || isNaN(amount) || parseFloat(amount) <= 0) {
-                    if (amount !== null) showNotification("Invalid amount entered.", true);
-                    return;
-                }
-                
-                const amountWei = ethers.utils.parseUnits(amount, 18);
-                if (amountWei.gt(srvBalance)) {
-                    return showNotification("Amount exceeds your SRV balance.", true);
-                }
-
-                showNotification("Approving SRV for staking...");
-                const txApprove = await srvTokenContract.approve(stakingVaultAddress, amountWei);
-                await txApprove.wait();
-
-                await handleContractInteraction(() => stakingContract.stake(amountWei), "SRV staked successfully!", "Staking SRV");
-
-            } catch(error) {
-                console.error("Stake SRV failed:", error);
-                showNotification(error.reason || "Stake SRV failed.", true);
+                await handleContractInteraction(
+                    () => srvTokenContract.approve(stakingVaultAddress, ethers.utils.parseUnits(amount, 18)),
+                    "Approval successful! You can now stake.",
+                    "Approving SRV"
+                );
+                stakeBtn.disabled = false;
+                stakeBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+            } catch (error) {
+                 console.error("Stake approval failed:", error);
+                 showNotification(error.reason || "Stake approval failed.", true);
             }
+        }
+
+        async function handleStakeSrv() {
+            if (!signer) return showNotification("Please connect your wallet first.", true);
+            const amount = stakeAmountInput.value;
+             if (!amount || isNaN(amount) || parseFloat(amount) <= 0) {
+                return showNotification("Please enter a valid amount.", true);
+            }
+            const stakingContract = new ethers.Contract(stakingVaultAddress, stakingAbi, signer);
+            await handleContractInteraction(() => stakingContract.stake(ethers.utils.parseUnits(amount, 18)), "SRV staked successfully!", "Staking SRV");
+            stakeAmountInput.value = '';
+            stakeBtn.disabled = true;
+            stakeBtn.classList.add('opacity-50', 'cursor-not-allowed');
         }
 
         async function handleUnstakeSrv() {
@@ -472,6 +476,11 @@
             depositBtn.disabled = true;
             depositBtn.classList.add('opacity-50', 'cursor-not-allowed');
         });
+        
+        stakeAmountInput.addEventListener('input', () => {
+            stakeBtn.disabled = true;
+            stakeBtn.classList.add('opacity-50', 'cursor-not-allowed');
+        });
 
         approveDepositBtn.addEventListener('click', handleApproveDeposit);
         depositBtn.addEventListener('click', handleDeposit);
@@ -481,6 +490,7 @@
         
         buyLeaseTokenBtn.addEventListener('click', handleBuyLeaseToken);
         claimStakingYieldBtn.addEventListener('click', handleStakingClaim);
+        approveStakeBtn.addEventListener('click', handleApproveStake);
         stakeBtn.addEventListener('click', handleStakeSrv);
         unstakeBtn.addEventListener('click', handleUnstakeSrv);
         redeemLeaseTokenBtn.addEventListener('click', handleRedeemLeaseToken);
