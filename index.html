@@ -95,7 +95,7 @@
                 </div>
                  <!-- Vault Claimable Yield -->
                  <div class="bg-gray-800 p-4 rounded-lg shadow-md">
-                    <p class="text-lg font-bold">Real Yield System Reward</p>
+                    <p class="text-lg font-bold">Vault Claimable Yield</p>
                     <p id="vault-claimable-yield" class="text-2xl font-mono">0.00</p>
                     <p class="text-sm text-gray-400">USDC earned in vault</p>
                   </div>
@@ -107,7 +107,7 @@
                     <h3 class="text-xl font-bold mb-4">Platform Totals</h3>
                     <div class="grid grid-cols-2 gap-4 text-center">
                         <div>
-                            <p class="text-sm text-gray-400">Real Yield System Balance</p>
+                            <p class="text-sm text-gray-400">Investor Vault Balance</p>
                             <p id="platform-investor-vault-balance" class="text-lg font-mono">$0.00</p>
                         </div>
                         <div>
@@ -115,7 +115,7 @@
                             <p id="platform-total-deposited" class="text-lg font-mono">$0.00</p>
                         </div>
                         <div>
-                            <p class="text-sm text-gray-400">Solver Yield Balance</p>
+                            <p class="text-sm text-gray-400">Yield Vault Balance</p>
                             <p id="platform-yield-vault-balance" class="text-lg font-mono">$0.00</p>
                         </div>
                         <div>
@@ -217,7 +217,7 @@
             notificationMessage.textContent = message;
             notificationToast.className = `px-4 py-2 rounded-lg shadow-lg text-white ${isError ? 'bg-red-600' : 'bg-gray-700'}`;
             notificationToast.classList.add('show');
-            setTimeout(() => { notificationToast.classList.remove('show'); }, 3000);
+            setTimeout(() => { notificationToast.classList.remove('show'); }, 4000); // Increased timeout for longer messages
         }
 
         function formatCurrency(value) {
@@ -283,24 +283,36 @@
         }
         
         // --- Action Handlers ---
+        async function handleContractInteraction(action, successMessage, failureMessage, suggestions = "") {
+            if (!signer) return showNotification("Please connect your wallet first.", true);
+            showNotification(`${failureMessage}...`);
+            try {
+                const tx = await action();
+                await tx.wait();
+                showNotification(successMessage, false);
+                connectAndLoadDashboard();
+            } catch (error) {
+                console.error(`${failureMessage} failed:`, error);
+                const reason = error.reason || "transaction reverted.";
+                showNotification(`${failureMessage} failed: ${reason} ${suggestions}`, true);
+            }
+        }
+
         async function handleApproveDeposit() {
             if (!signer) return showNotification("Please connect your wallet first.", true);
             const amount = depositAmountInput.value;
             if (!amount || isNaN(amount) || parseFloat(amount) <= 0) {
                 return showNotification("Please enter a valid amount.", true);
             }
-            try {
-                const usdc = new ethers.Contract(usdcAddress, erc20Abi, signer);
-                showNotification("Approving USDC spend...");
-                const tx = await usdc.approve(investorVaultAddress, ethers.utils.parseUnits(amount, 6));
-                await tx.wait();
-                showNotification("Approval successful! You can now deposit.", false);
-                depositBtn.disabled = false;
-                depositBtn.classList.remove('opacity-50', 'cursor-not-allowed');
-            } catch (error) {
-                console.error("Approval failed:", error);
-                showNotification(error.reason || "Approval failed.", true);
-            }
+            const usdc = new ethers.Contract(usdcAddress, erc20Abi, signer);
+            await handleContractInteraction(
+                () => usdc.approve(investorVaultAddress, ethers.utils.parseUnits(amount, 6)),
+                "Approval successful! You can now deposit.",
+                "Approving"
+            );
+            // Only enable deposit button on successful approval
+            depositBtn.disabled = false;
+            depositBtn.classList.remove('opacity-50', 'cursor-not-allowed');
         }
         
         async function handleDeposit() {
@@ -309,74 +321,37 @@
             if (!amount || isNaN(amount) || parseFloat(amount) <= 0) {
                 return showNotification("Please enter a valid amount.", true);
             }
-            try {
-                const vault = new ethers.Contract(investorVaultAddress, investorVaultAbi, signer);
-                showNotification("Depositing USDC...");
-                const tx = await vault.deposit(ethers.utils.parseUnits(amount, 6));
-                await tx.wait();
-                showNotification("Deposit successful!", false);
-                depositAmountInput.value = ""; 
-                depositBtn.disabled = true; 
-                depositBtn.classList.add('opacity-50', 'cursor-not-allowed');
-                connectAndLoadDashboard();
-            } catch(error) {
-                console.error("Deposit failed:", error);
-                showNotification(error.reason || "Deposit failed.", true);
-            }
+            const vault = new ethers.Contract(investorVaultAddress, investorVaultAbi, signer);
+            await handleContractInteraction(
+                () => vault.deposit(ethers.utils.parseUnits(amount, 6)),
+                "Deposit successful!",
+                "Depositing"
+            );
+            depositAmountInput.value = ""; 
+            depositBtn.disabled = true; 
+            depositBtn.classList.add('opacity-50', 'cursor-not-allowed');
         }
 
         async function handleVaultClaim() {
-            if (!signer) return showNotification("Please connect your wallet first.", true);
-             try {
-                const vault = new ethers.Contract(investorVaultAddress, investorVaultAbi, signer);
-                showNotification("Claiming yield...");
-                const tx = await vault.claimYield();
-                await tx.wait();
-                showNotification("Yield claimed!", false);
-                connectAndLoadDashboard();
-            } catch(error) {
-                console.error("Claim failed:", error);
-                showNotification(error.reason || "Claim failed.", true);
-            }
+            const vault = new ethers.Contract(investorVaultAddress, investorVaultAbi, signer);
+            await handleContractInteraction(() => vault.claimYield(), "Yield claimed!", "Claiming yield");
         }
 
         async function handleVaultCompound() {
-            if (!signer) return showNotification("Please connect your wallet first.", true);
-             try {
-                const vault = new ethers.Contract(investorVaultAddress, investorVaultAbi, signer);
-                showNotification("Compounding yield...");
-                const tx = await vault.compoundYield();
-                await tx.wait();
-                showNotification("Yield compounded!", false);
-                connectAndLoadDashboard();
-            } catch(error) {
-                console.error("Compound failed:", error);
-                showNotification(error.reason || "Compound failed.", true);
-            }
+            const vault = new ethers.Contract(investorVaultAddress, investorVaultAbi, signer);
+            await handleContractInteraction(() => vault.compoundYield(), "Yield compounded!", "Compounding yield");
         }
 
         async function handleVaultWithdraw() {
             if (!signer) return showNotification("Please connect your wallet first.", true);
-             try {
-                const vault = new ethers.Contract(investorVaultAddress, investorVaultAbi, signer);
-                const user = await signer.getAddress();
-                
-                showNotification("Fetching your shares to withdraw...");
-                const userShares = await vault.shares(user);
-
-                if (userShares.isZero()) {
-                    return showNotification("You have no shares to withdraw.", true);
-                }
-
-                showNotification("Withdrawing all funds...");
-                const tx = await vault.withdraw(userShares);
-                await tx.wait();
-                showNotification("Withdrawal successful!", false);
-                connectAndLoadDashboard();
-            } catch(error) {
-                console.error("Withdrawal failed:", error);
-                showNotification(error.reason || "Withdrawal failed.", true);
+            const vault = new ethers.Contract(investorVaultAddress, investorVaultAbi, signer);
+            const user = await signer.getAddress();
+            showNotification("Fetching your shares to withdraw...");
+            const userShares = await vault.shares(user);
+            if (userShares.isZero()) {
+                return showNotification("You have no shares to withdraw.", true);
             }
+            await handleContractInteraction(() => vault.withdraw(userShares), "Withdrawal successful!", "Withdrawing all funds");
         }
 
         async function handleBuyLeaseToken() {
@@ -386,36 +361,22 @@
                 if (amount !== null) showNotification("Invalid amount entered.", true);
                 return;
             }
+            const leaseBond = new ethers.Contract(leaseAddress, leaseBondAbi, signer);
+            const usdc = new ethers.Contract(usdcAddress, erc20Abi, signer);
+            showNotification("Approving USDC spend...");
             try {
-              const leaseBond = new ethers.Contract(leaseAddress, leaseBondAbi, signer);
-              const usdc = new ethers.Contract(usdcAddress, erc20Abi, signer);
-              showNotification("Approving USDC spend...");
-              const txApprove = await usdc.approve(leaseBond.address, ethers.utils.parseUnits(amount, 6));
-              await txApprove.wait(); 
-              showNotification("Processing purchase...");
-              const txBuy = await leaseBond.buy(ethers.utils.parseUnits(amount, 6));
-              await txBuy.wait();
-              showNotification("Lease token purchased successfully!");
-              connectAndLoadDashboard(); 
+                const txApprove = await usdc.approve(leaseBond.address, ethers.utils.parseUnits(amount, 6));
+                await txApprove.wait(); 
+                await handleContractInteraction(() => leaseBond.buy(ethers.utils.parseUnits(amount, 6)), "Lease token purchased successfully!", "Processing purchase");
             } catch (error) {
-              console.error("Purchase failed:", error);
-              showNotification(error.reason || "Purchase transaction failed.", true);
+                console.error("Purchase failed:", error);
+                showNotification(error.reason || "Purchase transaction failed.", true);
             }
         }
 
         async function handleStakingClaim() {
-            if (!signer) return showNotification("Please connect your wallet first.", true);
-            try {
-                const rewardContract = new ethers.Contract(rewardAddress, rewardAbi, signer);
-                showNotification("Claiming staking rewards...");
-                const tx = await rewardContract.claim();
-                await tx.wait();
-                showNotification("Staking rewards claimed!", false);
-                connectAndLoadDashboard();
-            } catch (error) {
-                console.error("Staking claim failed:", error);
-                showNotification(error.reason || "Staking claim failed. Check contract ABI.", true);
-            }
+            const rewardContract = new ethers.Contract(rewardAddress, rewardAbi, signer);
+            await handleContractInteraction(() => rewardContract.claim(), "Staking rewards claimed!", "Claiming staking rewards");
         }
 
         async function handleStakeSrv() {
@@ -425,22 +386,16 @@
                 if (amount !== null) showNotification("Invalid amount entered.", true);
                 return;
             }
+            const srevContract = new ethers.Contract(srevAddress, erc20Abi, signer);
+            const rewardContract = new ethers.Contract(rewardAddress, rewardAbi, signer);
+            showNotification("Approving SREV for staking...");
             try {
-                const srevContract = new ethers.Contract(srevAddress, erc20Abi, signer);
-                showNotification("Approving SREV for staking...");
                 const txApprove = await srevContract.approve(rewardAddress, ethers.utils.parseUnits(amount, 18));
                 await txApprove.wait();
-                
-                showNotification("Staking SREV...");
-                const rewardContract = new ethers.Contract(rewardAddress, rewardAbi, signer);
-                const txStake = await rewardContract.stake(ethers.utils.parseUnits(amount, 18));
-                await txStake.wait();
-
-                showNotification("SREV staked successfully!", false);
-                connectAndLoadDashboard();
+                await handleContractInteraction(() => rewardContract.stake(ethers.utils.parseUnits(amount, 18)), "SREV staked successfully!", "Staking SREV", "Ensure you have enough SREV.");
             } catch (error) {
                 console.error("Stake SRV failed:", error);
-                showNotification(error.reason || "Stake SRV failed. Check contract ABI.", true);
+                showNotification(error.reason || "Stake SRV failed.", true);
             }
         }
 
@@ -451,47 +406,18 @@
                 if (amount !== null) showNotification("Invalid amount entered.", true);
                 return;
             }
-            try {
-                const rewardContract = new ethers.Contract(rewardAddress, rewardAbi, signer);
-                showNotification("Unstaking SREV...");
-                const tx = await rewardContract.unstake(ethers.utils.parseUnits(amount, 18));
-                await tx.wait();
-                showNotification("SREV unstaked successfully!", false);
-                connectAndLoadDashboard();
-            } catch (error) {
-                console.error("Unstake SRV failed:", error);
-                showNotification(error.reason || "Unstake SRV failed. Check contract ABI.", true);
-            }
+            const rewardContract = new ethers.Contract(rewardAddress, rewardAbi, signer);
+            await handleContractInteraction(() => rewardContract.unstake(ethers.utils.parseUnits(amount, 18)), "SREV unstaked successfully!", "Unstaking SREV", "Ensure you have enough staked and are past any lock-up period.");
         }
 
         async function handleRedeemLeaseToken() {
-             if (!signer) return showNotification("Please connect your wallet first.", true);
-            try {
-                const leaseContract = new ethers.Contract(leaseAddress, leaseBondAbi, signer);
-                showNotification("Redeeming PFLOW25...");
-                const tx = await leaseContract.redeem();
-                await tx.wait();
-                showNotification("PFLOW25 redeemed successfully!", false);
-                connectAndLoadDashboard();
-            } catch (error) {
-                console.error("Redeem PFLOW25 failed:", error);
-                showNotification(error.reason || "Redeem failed. Check contract ABI.", true);
-            }
+            const leaseContract = new ethers.Contract(leaseAddress, leaseBondAbi, signer);
+            await handleContractInteraction(() => leaseContract.redeem(), "PFLOW25 redeemed successfully!", "Redeeming PFLOW25", "Ensure the token has reached maturity.");
         }
 
         async function handleEarlyRedeem() {
-            if (!signer) return showNotification("Please connect your wallet first.", true);
-            try {
-                const leaseContract = new ethers.Contract(leaseAddress, leaseBondAbi, signer);
-                showNotification("Executing early redeem...");
-                const tx = await leaseContract.earlyRedeem();
-                await tx.wait();
-                showNotification("Early redeem successful!", false);
-                connectAndLoadDashboard();
-            } catch (error) {
-                console.error("Early redeem failed:", error);
-                showNotification(error.reason || "Early redeem failed. Check contract ABI.", true);
-            }
+            const leaseContract = new ethers.Contract(leaseAddress, leaseBondAbi, signer);
+            await handleContractInteraction(() => leaseContract.earlyRedeem(), "Early redeem successful!", "Executing early redeem", "Ensure you are eligible for early redemption.");
         }
 
 
@@ -528,4 +454,4 @@
     });
   </script>
 </body>
-</ht
+</html>
