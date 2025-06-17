@@ -486,10 +486,12 @@
             if (!amountStr || isNaN(amountStr) || parseFloat(amountStr) <= 0) {
                 return showNotification("Invalid USDC amount.", true);
             }
-            const durationStr = prompt("Enter lock-up duration in seconds:");
+            const durationStr = prompt("Enter lock-up duration in days (e.g., 90):");
             if (!durationStr || isNaN(durationStr) || parseInt(durationStr) <= 0) {
                 return showNotification("Invalid duration.", true);
             }
+            
+            const durationInSeconds = parseInt(durationStr) * 86400; // 60 * 60 * 24
 
             const leaseBond = new ethers.Contract(leaseAddress, leaseBondAbi, signer);
             const usdc = new ethers.Contract(usdcAddress, erc20Abi, signer);
@@ -498,7 +500,7 @@
                 const txApprove = await usdc.approve(leaseAddress, ethers.utils.parseUnits(amountStr, 6));
                 await txApprove.wait(); 
                 await handleContractInteraction(
-                    () => leaseBond.buy(ethers.utils.parseUnits(amountStr, 6), parseInt(durationStr)), 
+                    () => leaseBond.buy(ethers.utils.parseUnits(amountStr, 6), durationInSeconds), 
                     "PFLOW25 purchased successfully!", 
                     "Processing purchase"
                 );
