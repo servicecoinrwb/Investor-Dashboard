@@ -36,13 +36,17 @@
     </div>
 
     <div id="dashboard-content" class="hidden">
+        <!-- Wallet Info (Full Width) -->
         <div class="bg-gray-800 p-4 rounded-lg mb-6 shadow-md">
           <p><strong>Wallet:</strong> <span id="wallet">-</span></p>
           <p class="text-sm text-gray-400">View your verified holdings, staking receipts, and redemption timeline.</p>
         </div>
 
+        <!-- Main Two-Column Layout -->
         <div class="grid lg:grid-cols-5 gap-6">
+            <!-- Left Column -->
             <div class="lg:col-span-3 space-y-6">
+                <!-- Balances -->
                 <div class="grid md:grid-cols-2 gap-4">
                   <div class="bg-gray-800 p-4 rounded-lg shadow-md">
                     <p class="text-lg font-bold">SREV Balance</p>
@@ -56,10 +60,10 @@
                   </div>
                 </div>
 
+                <!-- Staking and LeaseToken Actions -->
                 <div class="bg-gray-800 p-4 rounded-lg shadow-md">
                     <h3 class="text-xl font-bold mb-4">SRV Staking & PFLOW25</h3>
                     <div class="flex flex-wrap gap-2">
-                      <button id="claim" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">Claim Yield (Staking)</button>
                       <button id="stake" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">Stake SRV</button>
                       <button id="unstake" class="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded-lg transition-colors">Unstake SRV</button>
                       <button id="redeemLeaseToken" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">Redeem PFLOW25</button>
@@ -68,6 +72,7 @@
                     </div>
                 </div>
                 
+                <!-- Investor Vault Actions -->
                 <div class="bg-gray-800 p-4 rounded-lg shadow-md">
                     <h3 class="text-xl font-bold mb-4">Real Yield System</h3>
                     
@@ -87,13 +92,16 @@
                         <button id="vault-withdraw-all-btn" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">Withdraw All</button>
                     </div>
                 </div>
+                 <!-- Vault Claimable Yield -->
                  <div class="bg-gray-800 p-4 rounded-lg shadow-md">
                     <p class="text-lg font-bold">Vault Claimable Yield</p>
                     <p id="vault-claimable-yield" class="text-2xl font-mono">0.00</p>
                     <p class="text-sm text-gray-400">USDC earned in vault</p>
                   </div>
             </div>
+            <!-- Right Column -->
             <div class="lg:col-span-2 space-y-6">
+                <!-- Platform Totals -->
                 <div class="bg-gray-800 p-4 rounded-lg shadow-md">
                     <h3 class="text-xl font-bold mb-4">Platform Totals</h3>
                     <div class="grid grid-cols-2 gap-4 text-center">
@@ -115,12 +123,6 @@
                         </div>
                     </div>
                 </div>
-
-                <div class="bg-gray-800 p-4 rounded-lg shadow-md">
-                  <p class="text-lg font-bold">Staking Yield Pool</p>
-                  <p class="text-sm">Pool Balance: <span id="reward-pool">0.00 USDC</span></p>
-                  <p class="text-sm">Your Pending Rewards: <span id="pending-rewards">0.00 USDC</span></p>
-                </div>
             </div>
         </div>
     </div>
@@ -135,20 +137,9 @@
     document.addEventListener("DOMContentLoaded", () => {
         // --- ABIs and Contract Addresses ---
         const srevAbi = [{"constant":true,"inputs":[{"name":"owner","type":"address"}],"name":"balanceOf","outputs":[{"name":"","type":"uint256"}],"type":"function"}];
-        const leaseBondAbi = [
-          {"constant":true,"inputs":[{"name":"owner","type":"address"}],"name":"balanceOf","outputs":[{"name":"","type":"uint256"}],"type":"function"},
-          {"inputs":[{"name":"amount","type":"uint256"}],"name":"buy","outputs":[],"stateMutability":"nonpayable","type":"function"},
-          {"inputs":[],"name":"redeem","outputs":[],"stateMutability":"nonpayable","type":"function"},
-          {"inputs":[],"name":"earlyRedeem","outputs":[],"stateMutability":"nonpayable","type":"function"}
-        ];
-        const rewardAbi = [
-          {"inputs":[],"name":"viewRewardPoolBalance","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
-          {"inputs":[{"internalType":"address","name":"account","type":"address"}],"name":"viewPending","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
-          {"inputs":[],"name":"claim","outputs":[],"stateMutability":"nonpayable","type":"function"},
-          {"inputs":[{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"stake","outputs":[],"stateMutability":"nonpayable","type":"function"},
-          {"inputs":[{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"unstake","outputs":[],"stateMutability":"nonpayable","type":"function"},
-          {"inputs":[{"internalType":"address","name":"","type":"address"}],"name":"staked","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"}
-        ];
+        // FIX: Using the complete ABI for the PFLOW25 contract
+        const leaseBondAbi = [{"inputs":[{"internalType":"address","name":"usdcAddress","type":"address"},{"internalType":"uint256","name":"_purchasePrice","type":"uint256"},{"internalType":"uint256","name":"_redeemRate","type":"uint256"},{"internalType":"uint256","name":"_earlyRedeemRate","type":"uint256"},{"internalType":"uint256","name":"_durationSeconds","type":"uint256"}],"stateMutability":"nonpayable","type":"constructor"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"owner","type":"address"},{"indexed":true,"internalType":"address","name":"spender","type":"address"},{"indexed":false,"internalType":"uint256","name":"value","type":"uint256"}],"name":"Approval","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"user","type":"address"},{"indexed":false,"internalType":"uint256","name":"amount","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"payout","type":"uint256"}],"name":"EarlyRedeemed","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"previousOwner","type":"address"},{"indexed":true,"internalType":"address","name":"newOwner","type":"address"}],"name":"OwnershipTransferred","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"user","type":"address"},{"indexed":false,"internalType":"uint256","name":"amount","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"payout","type":"uint256"}],"name":"Redeemed","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"from","type":"address"},{"indexed":true,"internalType":"address","name":"to","type":"address"},{"indexed":false,"internalType":"uint256","name":"value","type":"uint256"}],"name":"Transfer","type":"event"},{"inputs":[{"internalType":"address","name":"","type":"address"},{"internalType":"address","name":"","type":"address"}],"name":"allowance","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"spender","type":"address"},{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"approve","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"","type":"address"}],"name":"balanceOf","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"buy","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"decimals","outputs":[{"internalType":"uint8","name":"","type":"uint8"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"earlyRedeem","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"earlyRedeemRate","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"emergencyWithdraw","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"enableTransfers","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"fundVault","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"","type":"address"}],"name":"lastBuyTimestamp","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"maturity","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"name","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"owner","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"purchasePrice","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"redeem","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"redeemRate","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"symbol","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"totalSupply","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"transfer","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"from","type":"address"},{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"transferFrom","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"newOwner","type":"address"}],"name":"transferOwnership","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"transfersEnabled","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"usdc","outputs":[{"internalType":"contract IERC20","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"usdcBalance","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"}];
+        const stakingAbi = [{"inputs":[{"internalType":"address","name":"_srv","type":"address"}],"stateMutability":"nonpayable","type":"constructor"},{"inputs":[],"name":"SREV","outputs":[{"internalType":"contract SREVToken","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"SRV","outputs":[{"internalType":"contract IERC20","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"getSREV","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"stake","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"","type":"address"}],"name":"staked","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"unstake","outputs":[],"stateMutability":"nonpayable","type":"function"}];
         const erc20Abi = [
           "function approve(address spender, uint256 amount) external returns (bool)",
           "function balanceOf(address owner) view returns (uint256)",
@@ -160,7 +151,7 @@
         const usdcAddress = "0xaf88d065e77c8cC2239327C5EDb3A432268e5831";
         const srevAddress = "0x2F745Da2FA453ee76c756fADcc081f59284B2a40";
         const leaseAddress = "0xd0dc6eeE2dD77d7A4C09108993d0c7ad6a0b60E3";
-        const rewardAddress = "0x71f618EFb0422687e5B2ad9cD973aDACb645D9DE";
+        const stakingContractAddress = "0x71f618EFb0422687e5B2ad9cD973aDACb645D9DE"; // This is the staking contract
         const investorVaultAddress = "0x1a51f1966d35661573908DC913307076d937aa90";
         const yieldVaultAddress = "0x44D64E1B9dC5F90b389900Da24B8de631222432C";
 
@@ -172,8 +163,6 @@
         const walletEl = document.getElementById("wallet");
         const srevBalanceEl = document.getElementById("srev-balance");
         const leaseTokenEl = document.getElementById("lease-token");
-        const rewardPoolEl = document.getElementById("reward-pool");
-        const pendingRewardsEl = document.getElementById("pending-rewards");
         const notificationToast = document.getElementById('notification-toast');
         const notificationMessage = document.getElementById('notification-message');
         const connectWalletContainer = document.getElementById('connect-wallet-container');
@@ -189,13 +178,13 @@
         const vaultCompoundYieldBtn = document.getElementById('vault-compound-yield-btn');
         const vaultWithdrawAllBtn = document.getElementById('vault-withdraw-all-btn');
         
-        const claimBtn = document.getElementById('claim');
         const stakeBtn = document.getElementById('stake');
         const unstakeBtn = document.getElementById('unstake');
         const redeemLeaseTokenBtn = document.getElementById('redeemLeaseToken');
         const earlyRedeemBtn = document.getElementById('earlyRedeem');
         const buyLeaseTokenBtn = document.getElementById('buyLeaseToken');
 
+        // Platform Totals UI Elements
         const platformInvestorVaultBalanceEl = document.getElementById('platform-investor-vault-balance');
         const platformTotalDepositedEl = document.getElementById('platform-total-deposited');
         const platformYieldVaultBalanceEl = document.getElementById('platform-yield-vault-balance');
@@ -225,15 +214,12 @@
 
             const srev = new ethers.Contract(srevAddress, srevAbi, provider);
             const lease = new ethers.Contract(leaseAddress, leaseBondAbi, provider);
-            const reward = new ethers.Contract(rewardAddress, rewardAbi, provider);
             const investorVault = new ethers.Contract(investorVaultAddress, investorVaultAbi, provider);
             const yieldVault = new ethers.Contract(yieldVaultAddress, yieldVaultAbi, provider);
 
             const [
                 srevBal, 
                 leaseBal, 
-                pool, 
-                pending, 
                 vaultYield,
                 investorVaultTotals,
                 totalCapitalDeposited,
@@ -242,8 +228,6 @@
             ] = await Promise.all([
                 srev.balanceOf(user),
                 lease.balanceOf(user),
-                reward.viewRewardPoolBalance(),
-                reward.viewPending(user),
                 investorVault.claimableYield(user),
                 investorVault.getVaultTotals(),
                 investorVault.totalDeposits(),
@@ -253,8 +237,6 @@
             
             srevBalanceEl.innerText = parseFloat(ethers.utils.formatUnits(srevBal, 18)).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
             leaseTokenEl.innerText = leaseBal.toString();
-            rewardPoolEl.innerText = `${parseFloat(ethers.utils.formatUnits(pool, 6)).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})} USDC`;
-            pendingRewardsEl.innerText = `${parseFloat(ethers.utils.formatUnits(pending, 18)).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})} USDC`;
             vaultClaimableYieldEl.innerText = parseFloat(ethers.utils.formatUnits(vaultYield, 6)).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
 
             platformInvestorVaultBalanceEl.innerText = formatCurrency(ethers.utils.formatUnits(investorVaultTotals.totalUSDC, 6));
@@ -353,7 +335,7 @@
             const usdc = new ethers.Contract(usdcAddress, erc20Abi, signer);
             showNotification("Approving USDC spend...");
             try {
-                const txApprove = await usdc.approve(leaseBond.address, ethers.utils.parseUnits(amount, 6));
+                const txApprove = await usdc.approve(leaseAddress, ethers.utils.parseUnits(amount, 6));
                 await txApprove.wait(); 
                 await handleContractInteraction(() => leaseBond.buy(ethers.utils.parseUnits(amount, 6)), "Lease token purchased successfully!", "Processing purchase");
             } catch (error) {
@@ -362,25 +344,22 @@
             }
         }
 
-        async function handleStakingClaim() {
-            const rewardContract = new ethers.Contract(rewardAddress, rewardAbi, signer);
-            await handleContractInteraction(() => rewardContract.claim(), "Staking rewards claimed!", "Claiming staking rewards");
-        }
-
         async function handleStakeSrv() {
             if (!signer) return showNotification("Please connect your wallet first.", true);
-            const amount = prompt("Enter amount of SREV to stake:");
+            const amount = prompt("Enter amount of SRV to stake:");
             if (!amount || isNaN(amount) || parseFloat(amount) <= 0) {
                 if (amount !== null) showNotification("Invalid amount entered.", true);
                 return;
             }
-            const srevContract = new ethers.Contract(srevAddress, erc20Abi, signer);
-            const rewardContract = new ethers.Contract(rewardAddress, rewardAbi, signer);
-            showNotification("Approving SREV for staking...");
+            const stakingContract = new ethers.Contract(stakingContractAddress, stakingAbi, signer);
+            showNotification("Approving SRV for staking...");
             try {
-                const txApprove = await srevContract.approve(rewardAddress, ethers.utils.parseUnits(amount, 18));
+                const srvTokenAddress = await stakingContract.SRV();
+                const srvTokenContract = new ethers.Contract(srvTokenAddress, erc20Abi, signer);
+
+                const txApprove = await srvTokenContract.approve(stakingContractAddress, ethers.utils.parseUnits(amount, 18));
                 await txApprove.wait();
-                await handleContractInteraction(() => rewardContract.stake(ethers.utils.parseUnits(amount, 18)), "SREV staked successfully!", "Staking SREV", "Ensure you have enough SREV.");
+                await handleContractInteraction(() => stakingContract.stake(ethers.utils.parseUnits(amount, 18)), "SRV staked successfully!", "Staking SRV", "Ensure you have enough SRV.");
             } catch (error) {
                 console.error("Stake SRV failed:", error);
                 showNotification(error.reason || "Stake SRV failed.", true);
@@ -391,18 +370,18 @@
             if (!signer) return showNotification("Please connect your wallet first.", true);
             
             try {
-                const rewardContract = new ethers.Contract(rewardAddress, rewardAbi, signer);
+                const stakingContract = new ethers.Contract(stakingContractAddress, stakingAbi, signer);
                 const user = await signer.getAddress();
 
                 showNotification("Fetching your staked balance...");
-                const stakedBalanceWei = await rewardContract.staked(user);
+                const stakedBalanceWei = await stakingContract.staked(user);
 
                 if (stakedBalanceWei.isZero()) {
-                    return showNotification("You have no SREV to unstake.", true);
+                    return showNotification("You have no SRV to unstake.", true);
                 }
                 
                 const stakedAmount = ethers.utils.formatUnits(stakedBalanceWei, 18);
-                const amountToUnstakeStr = prompt(`Enter amount of SREV to unstake (max: ${stakedAmount}):`);
+                const amountToUnstakeStr = prompt(`Enter amount of SRV to unstake (max: ${stakedAmount}):`);
                 
                 if (!amountToUnstakeStr || isNaN(amountToUnstakeStr) || parseFloat(amountToUnstakeStr) <= 0) {
                     if (amountToUnstakeStr !== null) showNotification("Invalid amount entered.", true);
@@ -416,9 +395,9 @@
                 }
                 
                 await handleContractInteraction(
-                    () => rewardContract.unstake(amountToUnstakeWei),
-                    "SREV unstaked successfully!",
-                    "Unstaking SREV",
+                    () => stakingContract.unstake(amountToUnstakeWei),
+                    "SRV unstaked successfully!",
+                    "Unstaking SRV",
                     "Ensure you have enough staked and are past any lock-up period."
                 );
 
@@ -464,7 +443,6 @@
         vaultWithdrawAllBtn.addEventListener('click', handleVaultWithdraw);
         
         buyLeaseTokenBtn.addEventListener('click', handleBuyLeaseToken);
-        claimBtn.addEventListener('click', handleStakingClaim);
         stakeBtn.addEventListener('click', handleStakeSrv);
         unstakeBtn.addEventListener('click', handleUnstakeSrv);
         redeemLeaseTokenBtn.addEventListener('click', handleRedeemLeaseToken);
@@ -473,4 +451,4 @@
     });
   </script>
 </body>
-</html>
+</ht
