@@ -151,12 +151,14 @@
           {"inputs":[],"name":"redeem","outputs":[],"stateMutability":"nonpayable","type":"function"},
           {"inputs":[],"name":"earlyRedeem","outputs":[],"stateMutability":"nonpayable","type":"function"}
         ];
+        // FIX: Added 'staked' to the reward ABI to fetch user's staked balance.
         const rewardAbi = [
           {"inputs":[],"name":"viewRewardPoolBalance","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
           {"inputs":[{"internalType":"address","name":"account","type":"address"}],"name":"viewPending","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
           {"inputs":[],"name":"claim","outputs":[],"stateMutability":"nonpayable","type":"function"},
           {"inputs":[{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"stake","outputs":[],"stateMutability":"nonpayable","type":"function"},
-          {"inputs":[{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"unstake","outputs":[],"stateMutability":"nonpayable","type":"function"}
+          {"inputs":[{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"unstake","outputs":[],"stateMutability":"nonpayable","type":"function"},
+          {"inputs":[{"internalType":"address","name":"","type":"address"}],"name":"staked","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"} // Assumed function to view staked amount
         ];
         const erc20Abi = [
           "function approve(address spender, uint256 amount) external returns (bool)",
@@ -217,7 +219,7 @@
             notificationMessage.textContent = message;
             notificationToast.className = `px-4 py-2 rounded-lg shadow-lg text-white ${isError ? 'bg-red-600' : 'bg-gray-700'}`;
             notificationToast.classList.add('show');
-            setTimeout(() => { notificationToast.classList.remove('show'); }, 4000); // Increased timeout for longer messages
+            setTimeout(() => { notificationToast.classList.remove('show'); }, 4000);
         }
 
         function formatCurrency(value) {
@@ -267,7 +269,6 @@
             pendingRewardsEl.innerText = `${parseFloat(ethers.utils.formatUnits(pending, 18)).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})} USDC`;
             vaultClaimableYieldEl.innerText = parseFloat(ethers.utils.formatUnits(vaultYield, 6)).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
 
-            // Populate Platform Totals
             platformInvestorVaultBalanceEl.innerText = formatCurrency(ethers.utils.formatUnits(investorVaultTotals.totalUSDC, 6));
             platformTotalDepositedEl.innerText = formatCurrency(ethers.utils.formatUnits(totalCapitalDeposited, 6));
             platformYieldVaultBalanceEl.innerText = formatCurrency(ethers.utils.formatUnits(yieldVaultBalance, 6));
@@ -310,7 +311,6 @@
                 "Approval successful! You can now deposit.",
                 "Approving"
             );
-            // Only enable deposit button on successful approval
             depositBtn.disabled = false;
             depositBtn.classList.remove('opacity-50', 'cursor-not-allowed');
         }
@@ -401,13 +401,42 @@
 
         async function handleUnstakeSrv() {
             if (!signer) return showNotification("Please connect your wallet first.", true);
-            const amount = prompt("Enter amount of SREV to unstake:");
-            if (!amount || isNaN(amount) || parseFloat(amount) <= 0) {
-                if (amount !== null) showNotification("Invalid amount entered.", true);
-                return;
+            
+            try {
+                const rewardContract = new ethers.Contract(rewardAddress, rewardAbi, signer);
+                const user = await signer.getAddress();
+
+                showNotification("Fetching your staked balance...");
+                const stakedBalance = await rewardContract.staked(user);
+
+                if (stakedBalance.isZero()) {
+                    return showNotification("You have no SREV to unstake.", true);
+                }
+                
+                const stakedAmount = ethers.utils.formatUnits(stakedBalance, 18);
+                const amountToUnstake = prompt(`Enter amount of SREV to unstake (max: ${stakedAmount}):`);
+                
+                if (!amountToUnstake || isNaN(amountToUnstake) || parseFloat(amountToUnstake) <= 0) {
+                    if (amountToUnstake !== null) showNotification("Invalid amount entered.", true);
+                    return;
+                }
+
+                if (parseFloat(amountToUnstake) > parseFloat(stakedAmount)) {
+                    return showNotification("Amount exceeds your staked balance.", true);
+                }
+                
+                await handleContractInteraction(
+                    () => rewardContract.unstake(ethers.utils.parseUnits(amountToUnstake, 18)),
+                    "SREV unstaked successfully!",
+                    "Unstaking SREV",
+                    "Ensure you have enough staked and are past any lock-up period."
+                );
+
+            } catch (error) {
+                 console.error("Unstake SRV failed:", error);
+                 const reason = error.reason || "transaction reverted.";
+                 showNotification(`Unstake SRV failed: ${reason}`, true);
             }
-            const rewardContract = new ethers.Contract(rewardAddress, rewardAbi, signer);
-            await handleContractInteraction(() => rewardContract.unstake(ethers.utils.parseUnits(amount, 18)), "SREV unstaked successfully!", "Unstaking SREV", "Ensure you have enough staked and are past any lock-up period.");
         }
 
         async function handleRedeemLeaseToken() {
