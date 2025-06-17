@@ -364,21 +364,41 @@
 
         async function handleStakeSrv() {
             if (!signer) return showNotification("Please connect your wallet first.", true);
-            const amount = prompt("Enter amount of SRV to stake:");
-            if (!amount || isNaN(amount) || parseFloat(amount) <= 0) {
-                if (amount !== null) showNotification("Invalid amount entered.", true);
-                return;
-            }
-            const stakingContract = new ethers.Contract(stakingVaultAddress, stakingAbi, signer);
-            showNotification("Approving SRV for staking...");
+            
             try {
+                const stakingContract = new ethers.Contract(stakingVaultAddress, stakingAbi, signer);
+                const user = await signer.getAddress();
+
+                // Get the correct SRV token address from the staking vault
                 const srvTokenAddress = await stakingContract.SRV();
                 const srvTokenContract = new ethers.Contract(srvTokenAddress, erc20Abi, signer);
+                
+                showNotification("Checking your SRV balance...");
+                const srvBalance = await srvTokenContract.balanceOf(user);
+                const srvBalanceFormatted = ethers.utils.formatUnits(srvBalance, 18);
+                
+                if (srvBalance.isZero()) {
+                    return showNotification("You have no SRV to stake.", true);
+                }
 
-                const txApprove = await srvTokenContract.approve(stakingVaultAddress, ethers.utils.parseUnits(amount, 18));
+                const amount = prompt(`Enter amount of SRV to stake (Available: ${srvBalanceFormatted}):`);
+                if (!amount || isNaN(amount) || parseFloat(amount) <= 0) {
+                    if (amount !== null) showNotification("Invalid amount entered.", true);
+                    return;
+                }
+                
+                const amountWei = ethers.utils.parseUnits(amount, 18);
+                if (amountWei.gt(srvBalance)) {
+                    return showNotification("Amount exceeds your SRV balance.", true);
+                }
+
+                showNotification("Approving SRV for staking...");
+                const txApprove = await srvTokenContract.approve(stakingVaultAddress, amountWei);
                 await txApprove.wait();
-                await handleContractInteraction(() => stakingContract.stake(ethers.utils.parseUnits(amount, 18)), "SRV staked successfully!", "Staking SRV", "Ensure you have enough SRV.");
-            } catch (error) {
+
+                await handleContractInteraction(() => stakingContract.stake(amountWei), "SRV staked successfully!", "Staking SRV");
+
+            } catch(error) {
                 console.error("Stake SRV failed:", error);
                 showNotification(error.reason || "Stake SRV failed.", true);
             }
