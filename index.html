@@ -526,18 +526,33 @@
 
         async function handleEarlyRedeemPflow() {
             if (!signer) return showNotification("Please connect your wallet first.", true);
-            const leaseContract = new ethers.Contract(leaseAddress, leaseBondAbi, signer);
-            const user = await signer.getAddress();
-            const balance = await leaseContract.balanceOf(user);
-            if (balance.isZero()) {
-                return showNotification("You have no PFLOW25 to early redeem.", true);
+            try {
+                const leaseContract = new ethers.Contract(leaseAddress, leaseBondAbi, signer);
+                const user = await signer.getAddress();
+                const balance = await leaseContract.balanceOf(user);
+                
+                if (balance.isZero()) {
+                    return showNotification("You have no PFLOW25 to early redeem.", true);
+                }
+
+                const minHold = await leaseContract.earlyRedeemMinHold();
+                const lastBuy = await leaseContract.getLastBuy(user);
+                const now = Math.floor(Date.now() / 1000);
+
+                if (now < lastBuy.add(minHold).toNumber()) {
+                    return showNotification(`You must hold PFLOW25 for ${minHold.toString()} seconds before early redemption.`, true);
+                }
+
+                await handleContractInteraction(
+                    () => leaseContract.earlyRedeem(), 
+                    "Early redeem successful!", 
+                    "Executing early redeem"
+                );
+            } catch (error) {
+                 console.error("Early redeem failed:", error);
+                 const reason = error.reason || "transaction reverted without a reason.";
+                 showNotification(`Early redeem failed: ${reason}`, true);
             }
-            await handleContractInteraction(
-                () => leaseContract.earlyRedeem(), 
-                "Early redeem successful!", 
-                "Executing early redeem", 
-                "Ensure you are eligible for early redemption."
-            );
         }
 
 
