@@ -161,6 +161,12 @@
         const stakingVaultAddress = "0x691e29E98ECDc5ae948355F30102cD4D637eddB7";
         const investorVaultAddress = "0x1a51f1966d35661573908DC913307076d937aa90";
         const yieldVaultAddress = "0x44D64E1B9dC5F90b389900Da24B8de631222432C";
+        // FIX: Restore the standard ERC20 ABI to the correct scope
+        const erc20Abi = [
+            "function approve(address spender, uint256 amount) external returns (bool)",
+            "function balanceOf(address owner) view returns (uint256)",
+            "function allowance(address owner, address spender) view returns (uint256)"
+        ];
 
         // --- Ethers.js Setup ---
         let provider;
@@ -191,10 +197,7 @@
         const stakeBtn = document.getElementById('stake-btn');
         const unstakeBtn = document.getElementById('unstake');
         const claimStakingYieldBtn = document.getElementById('claim-staking-yield-btn');
-        const redeemLeaseTokenBtn = document.getElementById('redeemLeaseToken');
-        const earlyRedeemBtn = document.getElementById('earlyRedeem');
-        const buyLeaseTokenBtn = document.getElementById('buyLeaseToken');
-
+        
         // Platform & Staking Totals UI Elements
         const platformInvestorVaultBalanceEl = document.getElementById('platform-investor-vault-balance');
         const platformTotalDepositedEl = document.getElementById('platform-total-deposited');
@@ -202,8 +205,6 @@
         const platformTotalFeesEl = document.getElementById('platform-total-fees');
         const stakingPoolBalanceEl = document.getElementById('staking-pool-balance');
         const stakingPendingRewardsEl = document.getElementById('staking-pending-rewards');
-        const maturityDateEl = document.getElementById('maturity-date');
-
 
         // --- Helper Functions ---
         function showNotification(message, isError = false) {
@@ -225,12 +226,6 @@
             signer = provider.getSigner();
             const user = await signer.getAddress();
             walletEl.innerText = `${user.substring(0, 6)}...${user.substring(user.length - 4)}`;
-
-            const erc20Abi = [
-                "function approve(address spender, uint256 amount) external returns (bool)",
-                "function balanceOf(address owner) view returns (uint256)",
-                "function allowance(address owner, address spender) view returns (uint256)"
-            ];
 
             const srev = new ethers.Contract(srevAddress, srevAbi, provider);
             const rewardDistributor = new ethers.Contract(rewardDistributorAddress, rewardDistributorAbi, provider);
@@ -365,6 +360,7 @@
             if (!amount || isNaN(amount) || parseFloat(amount) <= 0) {
                 return showNotification("Please enter a valid amount.", true);
             }
+            
             const stakingContract = new ethers.Contract(stakingVaultAddress, stakingAbi, signer);
             const srvTokenAddress = await stakingContract.SRV();
             const srvTokenContract = new ethers.Contract(srvTokenAddress, erc20Abi, signer);
@@ -439,7 +435,6 @@
                  showNotification(`Unstake SRV failed: ${reason}`, true);
             }
         }
-
 
         // --- Event Listeners Setup ---
         connectWalletBtn.addEventListener('click', () => {
