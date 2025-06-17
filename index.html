@@ -49,11 +49,16 @@
                 <!-- Balances -->
                 <div class="grid md:grid-cols-2 gap-4">
                   <div class="bg-gray-800 p-4 rounded-lg shadow-md">
+                    <p class="text-lg font-bold">SRV Balance</p>
+                    <p id="srv-balance" class="text-2xl font-mono">0.00</p>
+                    <p class="text-sm text-gray-400">The token required for staking.</p>
+                  </div>
+                   <div class="bg-gray-800 p-4 rounded-lg shadow-md">
                     <p class="text-lg font-bold">SREV Balance</p>
                     <p id="srev-balance" class="text-2xl font-mono">0.00</p>
                     <p class="text-sm text-gray-400">Auto-yielding USDC receipt</p>
                   </div>
-                  <div class="bg-gray-800 p-4 rounded-lg shadow-md">
+                  <div class="bg-gray-800 p-4 rounded-lg shadow-md md:col-span-2">
                     <p class="text-lg font-bold">PFLOW25</p>
                     <p id="lease-token" class="text-2xl font-mono">0</p>
                     <p class="text-sm text-gray-400">$10 Buy 10.80 Early Redeem after Cooldown period $12 redeemable after maturity</p>
@@ -225,9 +230,14 @@
             const rewardDistributor = new ethers.Contract(rewardDistributorAddress, rewardDistributorAbi, provider);
             const investorVault = new ethers.Contract(investorVaultAddress, investorVaultAbi, provider);
             const yieldVault = new ethers.Contract(yieldVaultAddress, yieldVaultAbi, provider);
+            const stakingVault = new ethers.Contract(stakingVaultAddress, stakingAbi, provider);
+            const srvTokenAddress = await stakingVault.SRV();
+            const srv = new ethers.Contract(srvTokenAddress, erc20Abi, provider);
+
 
             const [
-                srevBal, 
+                srevBal,
+                srvBal, 
                 leaseBal, 
                 vaultYield,
                 investorVaultTotals,
@@ -239,6 +249,7 @@
                 maturityTimestamp
             ] = await Promise.all([
                 srev.balanceOf(user),
+                srv.balanceOf(user),
                 lease.balanceOf(user),
                 investorVault.claimableYield(user),
                 investorVault.getVaultTotals(),
@@ -251,6 +262,7 @@
             ]);
             
             srevBalanceEl.innerText = parseFloat(ethers.utils.formatUnits(srevBal, 18)).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            srvBalanceEl.innerText = parseFloat(ethers.utils.formatUnits(srvBal, 18)).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
             leaseTokenEl.innerText = leaseBal.toString();
             vaultClaimableYieldEl.innerText = parseFloat(ethers.utils.formatUnits(vaultYield, 6)).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
 
@@ -378,20 +390,31 @@
 
         async function handleStakeSrv() {
             if (!signer) return showNotification("Please connect your wallet first.", true);
-            const amount = prompt("Enter amount of SRV to stake:");
+            
+            const stakingContract = new ethers.Contract(stakingVaultAddress, stakingAbi, signer);
+            const srvTokenAddress = await stakingContract.SRV();
+            const srvTokenContract = new ethers.Contract(srvTokenAddress, erc20Abi, signer);
+            const user = await signer.getAddress();
+            const srvBalance = await srvTokenContract.balanceOf(user);
+            const formattedSrvBalance = ethers.utils.formatUnits(srvBalance, 18);
+
+            const amount = prompt(`Enter amount of SRV to stake (Your balance: ${formattedSrvBalance}):`);
+
             if (!amount || isNaN(amount) || parseFloat(amount) <= 0) {
                 if (amount !== null) showNotification("Invalid amount entered.", true);
                 return;
             }
-            const stakingContract = new ethers.Contract(stakingVaultAddress, stakingAbi, signer);
+            
+            const amountWei = ethers.utils.parseUnits(amount, 18);
+            if(amountWei.gt(srvBalance)) {
+                return showNotification("Amount exceeds your SRV balance.", true);
+            }
+
             showNotification("Approving SRV for staking...");
             try {
-                const srvTokenAddress = await stakingContract.SRV();
-                const srvTokenContract = new ethers.Contract(srvTokenAddress, erc20Abi, signer);
-
-                const txApprove = await srvTokenContract.approve(stakingVaultAddress, ethers.utils.parseUnits(amount, 18));
+                const txApprove = await srvTokenContract.approve(stakingVaultAddress, amountWei);
                 await txApprove.wait();
-                await handleContractInteraction(() => stakingContract.stake(ethers.utils.parseUnits(amount, 18)), "SRV staked successfully!", "Staking SRV", "Ensure you have enough SRV.");
+                await handleContractInteraction(() => stakingContract.stake(amountWei), "SRV staked successfully!", "Staking SRV", "Ensure you have enough SRV.");
             } catch (error) {
                 console.error("Stake SRV failed:", error);
                 showNotification(error.reason || "Stake SRV failed.", true);
