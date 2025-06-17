@@ -36,17 +36,13 @@
     </div>
 
     <div id="dashboard-content" class="hidden">
-        <!-- Wallet Info (Full Width) -->
         <div class="bg-gray-800 p-4 rounded-lg mb-6 shadow-md">
           <p><strong>Wallet:</strong> <span id="wallet">-</span></p>
           <p class="text-sm text-gray-400">View your verified holdings, staking receipts, and redemption timeline.</p>
         </div>
 
-        <!-- Main Two-Column Layout -->
         <div class="grid lg:grid-cols-5 gap-6">
-            <!-- Left Column -->
             <div class="lg:col-span-3 space-y-6">
-                <!-- Balances -->
                 <div class="grid md:grid-cols-2 gap-4">
                   <div class="bg-gray-800 p-4 rounded-lg shadow-md">
                     <p class="text-lg font-bold">SREV Balance</p>
@@ -60,7 +56,6 @@
                   </div>
                 </div>
 
-                <!-- Staking and LeaseToken Actions -->
                 <div class="bg-gray-800 p-4 rounded-lg shadow-md">
                     <h3 class="text-xl font-bold mb-4">SRV Staking & PFLOW25</h3>
                     <div class="flex flex-wrap gap-2">
@@ -73,7 +68,6 @@
                     </div>
                 </div>
                 
-                <!-- Investor Vault Actions -->
                 <div class="bg-gray-800 p-4 rounded-lg shadow-md">
                     <h3 class="text-xl font-bold mb-4">Real Yield System</h3>
                     
@@ -93,16 +87,13 @@
                         <button id="vault-withdraw-all-btn" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">Withdraw All</button>
                     </div>
                 </div>
-                 <!-- Vault Claimable Yield -->
                  <div class="bg-gray-800 p-4 rounded-lg shadow-md">
                     <p class="text-lg font-bold">Vault Claimable Yield</p>
                     <p id="vault-claimable-yield" class="text-2xl font-mono">0.00</p>
                     <p class="text-sm text-gray-400">USDC earned in vault</p>
                   </div>
             </div>
-            <!-- Right Column -->
             <div class="lg:col-span-2 space-y-6">
-                <!-- Platform Totals -->
                 <div class="bg-gray-800 p-4 rounded-lg shadow-md">
                     <h3 class="text-xl font-bold mb-4">Platform Totals</h3>
                     <div class="grid grid-cols-2 gap-4 text-center">
@@ -125,7 +116,6 @@
                     </div>
                 </div>
 
-                <!-- Yield Pool -->
                 <div class="bg-gray-800 p-4 rounded-lg shadow-md">
                   <p class="text-lg font-bold">Staking Yield Pool</p>
                   <p class="text-sm">Pool Balance: <span id="reward-pool">0.00 USDC</span></p>
@@ -206,7 +196,6 @@
         const earlyRedeemBtn = document.getElementById('earlyRedeem');
         const buyLeaseTokenBtn = document.getElementById('buyLeaseToken');
 
-        // Platform Totals UI Elements
         const platformInvestorVaultBalanceEl = document.getElementById('platform-investor-vault-balance');
         const platformTotalDepositedEl = document.getElementById('platform-total-deposited');
         const platformYieldVaultBalanceEl = document.getElementById('platform-yield-vault-balance');
@@ -293,7 +282,7 @@
                 connectAndLoadDashboard();
             } catch (error) {
                 console.error(`${failureMessage} failed:`, error);
-                const reason = error.reason || (error.data ? ethers.utils.toUtf8String('0x' + error.data.substr(138)) : "transaction reverted.");
+                const reason = error.reason || "transaction reverted without a reason string.";
                 showNotification(`${failureMessage} failed: ${reason} ${suggestions}`, true);
             }
         }
@@ -406,26 +395,28 @@
                 const user = await signer.getAddress();
 
                 showNotification("Fetching your staked balance...");
-                const stakedBalance = await rewardContract.staked(user);
+                const stakedBalanceWei = await rewardContract.staked(user);
 
-                if (stakedBalance.isZero()) {
+                if (stakedBalanceWei.isZero()) {
                     return showNotification("You have no SREV to unstake.", true);
                 }
                 
-                const stakedAmount = ethers.utils.formatUnits(stakedBalance, 18);
-                const amountToUnstake = prompt(`Enter amount of SREV to unstake (max: ${stakedAmount}):`);
+                const stakedAmount = ethers.utils.formatUnits(stakedBalanceWei, 18);
+                const amountToUnstakeStr = prompt(`Enter amount of SREV to unstake (max: ${stakedAmount}):`);
                 
-                if (!amountToUnstake || isNaN(amountToUnstake) || parseFloat(amountToUnstake) <= 0) {
-                    if (amountToUnstake !== null) showNotification("Invalid amount entered.", true);
+                if (!amountToUnstakeStr || isNaN(amountToUnstakeStr) || parseFloat(amountToUnstakeStr) <= 0) {
+                    if (amountToUnstakeStr !== null) showNotification("Invalid amount entered.", true);
                     return;
                 }
 
-                if (parseFloat(amountToUnstake) > parseFloat(stakedAmount)) {
+                const amountToUnstakeWei = ethers.utils.parseUnits(amountToUnstakeStr, 18);
+
+                if (amountToUnstakeWei.gt(stakedBalanceWei)) {
                     return showNotification("Amount exceeds your staked balance.", true);
                 }
                 
                 await handleContractInteraction(
-                    () => rewardContract.unstake(ethers.utils.parseUnits(amountToUnstake, 18)),
+                    () => rewardContract.unstake(amountToUnstakeWei),
                     "SREV unstaked successfully!",
                     "Unstaking SREV",
                     "Ensure you have enough staked and are past any lock-up period."
@@ -482,4 +473,4 @@
     });
   </script>
 </body>
-</ht
+</html>
