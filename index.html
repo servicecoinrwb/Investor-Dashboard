@@ -70,7 +70,7 @@
                             <button id="approve-stake-btn" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">Approve SRV</button>
                             <button id="stake-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition-colors opacity-50 cursor-not-allowed" disabled>Stake</button>
                         </div>
-                        <p class="text-xs text-gray-500 mt-2">First approve, then stake, unstake anytime.</p>
+                        <p class="text-xs text-gray-500 mt-2">First approve, then stake, claim & unstake at anytime.</p>
                     </div>
                     <div class="flex flex-wrap gap-2">
                       <button id="unstake" class="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded-lg transition-colors">Unstake SRV</button>
@@ -106,6 +106,13 @@
             </div>
             <!-- Right Column -->
             <div class="lg:col-span-2 space-y-6">
+               <!-- Staking Yield Pool -->
+                 <div class="bg-gray-800 p-4 rounded-lg shadow-md">
+                    <h3 class="text-xl font-bold mb-4">Service Business Revenue</h3>
+                    <p class="text-sm">Pool Balance: <span id="staking-pool-balance">0.00 USDC</span></p>
+                    <p class="text-sm">Your Pending Rewards: <span id="staking-pending-rewards">0.00 USDC</span></p>
+                    <button id="claim-staking-yield-btn" class="mt-4 bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg transition-colors w-full">Claim Yield (Staking)</button>
+                  </div>
                 <!-- Platform Totals -->
                 <div class="bg-gray-800 p-4 rounded-lg shadow-md">
                     <h3 class="text-xl font-bold mb-4">Real Yield System Totals</h3>
@@ -128,18 +135,7 @@
                         </div>
                     </div>
                 </div>
-                 <!-- Staking Yield Pool -->
-                 <div class="bg-gray-800 p-4 rounded-lg shadow-md">
-                    <h3 class="text-xl font-bold mb-4">Service Business Revenue</h3>
-                    <p class="text-sm">Pool Balance: <span id="staking-pool-balance">0.00 USDC</span></p>
-                    <p class="text-sm">Your Pending Rewards: <span id="staking-pending-rewards">0.00 USDC</span></p>
-                    <button id="claim-staking-yield-btn" class="mt-4 bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg transition-colors w-full">Claim Yield (Staking)</button>
-                  </div>
-            </div>
-        </div>
-    </div>
-  </div>
-
+              </div>
   <div id="notification-toast" class="px-4 py-2 rounded-lg shadow-lg text-white">
       <span id="notification-message"></span>
   </div>
