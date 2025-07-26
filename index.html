@@ -249,7 +249,10 @@ document.addEventListener("DOMContentLoaded", () => {
             document.getElementById("platform-total-fees").innerText = formatCurrency(ethers.formatUnits(totalFees, 6));
             
             document.getElementById("staking-pool-balance").innerText = `${parseFloat(ethers.formatUnits(stakingPoolBalance, 6)).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})} USDC`;
-            document.getElementById("staking-pending-rewards").innerText = `${parseFloat(ethers.formatUnits(stakingPendingRewards, 6)).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})} USDC`;
+            
+            // --- THIS SECTION IS NOW FIXED ---
+            // The contract returns rewards with 18 decimals, so we format it that way.
+            document.getElementById("staking-pending-rewards").innerText = `${parseFloat(ethers.formatUnits(stakingPendingRewards, 18)).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 4})} USDC`;
 
         } catch (error) {
             console.error("Data fetch failed:", error);
@@ -276,7 +279,6 @@ document.addEventListener("DOMContentLoaded", () => {
     // --- Event Listeners Setup ---
     connectWalletBtn.addEventListener('click', connectAndLoadDashboard);
     
-    // Add other event listeners here, pointing to simplified handler functions
     document.getElementById('approve-deposit-btn').addEventListener('click', async () => {
         const amount = document.getElementById('deposit-amount').value;
         if (!amount || isNaN(amount) || parseFloat(amount) <= 0) return showNotification("Please enter a valid amount.", true);
@@ -303,7 +305,7 @@ document.addEventListener("DOMContentLoaded", () => {
         );
     });
 
-    // ... Add similar simplified handlers for all other buttons ...
+    // ... (Add other button handlers here in the same simplified style)
 
 });
 </script>
