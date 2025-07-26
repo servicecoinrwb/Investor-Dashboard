@@ -251,8 +251,10 @@ document.addEventListener("DOMContentLoaded", () => {
             document.getElementById("staking-pool-balance").innerText = `${parseFloat(ethers.formatUnits(stakingPoolBalance, 6)).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})} USDC`;
             
             // --- THIS SECTION IS NOW FIXED ---
-            // The contract returns rewards with 18 decimals, so we format it that way.
-            document.getElementById("staking-pending-rewards").innerText = `${parseFloat(ethers.formatUnits(stakingPendingRewards, 18)).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 4})} USDC`;
+            // The contract returns rewards with 18 decimals, but they represent USDC value (6 decimals).
+            // We divide by 1e12 to correct the display.
+            const correctedStakingRewards = stakingPendingRewards / 1000000000000n;
+            document.getElementById("staking-pending-rewards").innerText = `${parseFloat(ethers.formatUnits(correctedStakingRewards, 6)).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 4})} USDC`;
 
         } catch (error) {
             console.error("Data fetch failed:", error);
@@ -305,6 +307,15 @@ document.addEventListener("DOMContentLoaded", () => {
         );
     });
 
+    // --- THIS SECTION IS NEW ---
+    document.getElementById('claim-staking-yield-btn').addEventListener('click', async () => {
+        const rewardDistributorContract = new ethers.Contract(addresses.rewardDistributor, abis.rewardDistributor, signer);
+        await handleTransaction(
+            () => rewardDistributorContract.claim(),
+            "Staking rewards claimed!",
+            "Claiming Staking Rewards"
+        );
+    });
     // ... (Add other button handlers here in the same simplified style)
 
 });
