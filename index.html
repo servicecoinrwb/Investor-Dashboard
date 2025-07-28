@@ -137,11 +137,11 @@
 document.addEventListener("DOMContentLoaded", () => {
     // --- Ethers.js Setup ---
     let provider, signer, currentAddress;
-    // --- FIX: Added a variable to store the dynamic SRV token address ---
-    let srvTokenAddress;
+    let srvTokenAddress; // Variable to hold the dynamic SRV token address
 
     // --- Alchemy RPC Provider ---
-    const RPC_URL = "https://arb-mainnet.g.alchemy.com/v2/YOUR_ALCHEMY_API_KEY"; // Replace with your key
+    // Make sure this key is correct and for Arbitrum Mainnet
+    const RPC_URL = "https://arb-mainnet.g.alchemy.com/v2/YR7lOxqhQTfK1wkrk6Jk7"; 
     const readProvider = new ethers.JsonRpcProvider(RPC_URL);
 
     // --- Contract Addresses ---
@@ -203,6 +203,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     async function fetchAllData() {
+        if (!currentAddress) return;
         try {
             const srevReader = new ethers.Contract(addresses.srev, abis.srev, readProvider);
             const rewardDistributorReader = new ethers.Contract(addresses.rewardDistributor, abis.rewardDistributor, readProvider);
@@ -210,7 +211,6 @@ document.addEventListener("DOMContentLoaded", () => {
             const yieldVaultReader = new ethers.Contract(addresses.yieldVault, abis.yieldVault, readProvider);
             const stakingVaultReader = new ethers.Contract(addresses.stakingVault, abis.staking, readProvider);
             
-            // --- FIX: Storing the dynamic address for later use in button actions ---
             srvTokenAddress = await stakingVaultReader.SRV();
             const srvReader = new ethers.Contract(srvTokenAddress, abis.erc20, readProvider);
 
@@ -238,8 +238,7 @@ document.addEventListener("DOMContentLoaded", () => {
             document.getElementById("platform-total-fees").innerText = formatCurrency(ethers.formatUnits(totalFees, 6));
             
             document.getElementById("staking-pool-balance").innerText = `${parseFloat(ethers.formatUnits(stakingPoolBalance, 6)).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})} USDC`;
-            
-            document.getElementById("staking-pending-rewards").innerText = `${parseFloat(ethers.formatUnits(stakingPendingRewards, 18)).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 4})} USDC`;
+            document.getElementById("staking-pending-rewards").innerText = `${parseFloat(ethers.formatUnits(stakingPendingRewards, 18)).toLocaleString(undefined, {minimumFractionDigits: 4, maximumFractionDigits: 4})} USDC`;
 
         } catch (error) {
             console.error("Data fetch failed:", error);
@@ -253,6 +252,7 @@ document.addEventListener("DOMContentLoaded", () => {
         showNotification(`${failureMessage}...`);
         try {
             const tx = await action();
+            showNotification("Transaction sent, waiting for confirmation...");
             await tx.wait();
             showNotification(successMessage, false);
             fetchAllData(); // Refresh data after transaction
@@ -266,9 +266,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // --- Event Listeners Setup ---
     connectWalletBtn.addEventListener('click', connectAndLoadDashboard);
     
-    // --- FIX: ADDED SRV STAKING EVENT LISTENERS ---
-
-    // 1. Approve SRV Button
+    // --- SRV Staking Event Listeners ---
     document.getElementById('approve-stake-btn').addEventListener('click', async () => {
         const amount = document.getElementById('stake-amount').value;
         if (!amount || isNaN(amount) || parseFloat(amount) <= 0) return showNotification("Please enter a valid amount.", true);
@@ -280,12 +278,10 @@ document.addEventListener("DOMContentLoaded", () => {
             "Approval successful! You can now stake.",
             "Approving SRV"
         );
-        // Enable stake button after successful approval
         document.getElementById('stake-btn').disabled = false;
         document.getElementById('stake-btn').classList.remove('opacity-50', 'cursor-not-allowed');
     });
 
-    // 2. Stake SRV Button
     document.getElementById('stake-btn').addEventListener('click', async () => {
         const amount = document.getElementById('stake-amount').value;
         if (!amount || isNaN(amount) || parseFloat(amount) <= 0) return showNotification("Please enter a valid amount.", true);
@@ -298,11 +294,8 @@ document.addEventListener("DOMContentLoaded", () => {
         );
     });
 
-    // 3. Unstake SRV Button
     document.getElementById('unstake').addEventListener('click', async () => {
         const stakingContract = new ethers.Contract(addresses.stakingVault, abis.staking, signer);
-        // This assumes the user wants to unstake their full balance.
-        // For partial unstaking, you would add an input field.
         const stakedAmount = await stakingContract.staked(currentAddress);
         if (stakedAmount === 0n) return showNotification("You have no SRV staked.", true);
 
@@ -313,7 +306,7 @@ document.addEventListener("DOMContentLoaded", () => {
         );
     });
     
-    // --- Real Yield System Event Listeners ---
+    // --- USDC Deposit Event Listeners ---
     document.getElementById('approve-deposit-btn').addEventListener('click', async () => {
         const amount = document.getElementById('deposit-amount').value;
         if (!amount || isNaN(amount) || parseFloat(amount) <= 0) return showNotification("Please enter a valid amount.", true);
@@ -339,7 +332,50 @@ document.addEventListener("DOMContentLoaded", () => {
             "Depositing USDC"
         );
     });
+
+    // --- Real Yield System Event Listeners ---
+    document.getElementById('vault-claim-yield-btn').addEventListener('click', async () => {
+        const investorVaultContract = new ethers.Contract(addresses.investorVault, abis.investorVault, signer);
+        await handleTransaction(
+            () => investorVaultContract.claimYield(),
+            "Yield claimed successfully!",
+            "Claiming Yield"
+        );
+    });
+
+    document.getElementById('vault-compound-yield-btn').addEventListener('click', async () => {
+        const investorVaultContract = new ethers.Contract(addresses.investorVault, abis.investorVault, signer);
+        await handleTransaction(
+            () => investorVaultContract.compoundYield(),
+            "Yield compounded successfully!",
+            "Compounding Yield"
+        );
+    });
+
+    document.getElementById('vault-withdraw-all-btn').addEventListener('click', async () => {
+        const investorVaultContract = new ethers.Contract(addresses.investorVault, abis.investorVault, signer);
+        const userInfo = await investorVaultContract.getInvestorInfo(currentAddress);
+        const userShares = userInfo.share;
+
+        if (userShares === 0n) {
+            return showNotification("You have no shares to withdraw.", true);
+        }
+        
+        // Check for lockup period if applicable (this logic might need adjustment based on your contract)
+        const unlockTime = userInfo.unlockTime;
+        if (Date.now() / 1000 < unlockTime) {
+            const unlockDate = new Date(Number(unlockTime) * 1000).toLocaleString();
+            return showNotification(`Your funds are locked until ${unlockDate}.`, true);
+        }
+        
+        await handleTransaction(
+            () => investorVaultContract.withdraw(userShares),
+            "Withdrawal successful!",
+            "Withdrawing All Funds"
+        );
+    });
     
+    // --- Staking Yield Claim Listener ---
     document.getElementById('claim-staking-yield-btn').addEventListener('click', async () => {
         const rewardDistributorContract = new ethers.Contract(addresses.rewardDistributor, abis.rewardDistributor, signer);
         await handleTransaction(
@@ -348,7 +384,6 @@ document.addEventListener("DOMContentLoaded", () => {
             "Claiming Staking Rewards"
         );
     });
-    
 });
 </script>
 
