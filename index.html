@@ -1256,8 +1256,22 @@
         // Helper functions
         function formatTokenAmount(amount, decimals) {
             if (!amount || amount.toString() === '0') return '0.00';
-            const divisor = decimals.toString() === '6' ? 'mwei' : 'ether';
-            const value = parseFloat(web3.utils.fromWei(amount.toString(), divisor));
+            
+            const amountStr = amount.toString();
+            const decimalsInt = parseInt(decimals.toString(), 10);
+
+            // Ensure the string has enough digits for the fractional part
+            const paddedAmount = amountStr.padStart(decimalsInt + 1, '0');
+            
+            const integerPart = paddedAmount.slice(0, -decimalsInt);
+            const fractionalPart = paddedAmount.slice(-decimalsInt);
+            
+            const value = parseFloat(`${integerPart}.${fractionalPart}`);
+            
+            // Use different formatting for very small numbers vs. larger numbers
+            if (value < 0.01 && value > 0) {
+                 return value.toPrecision(4);
+            }
             return value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 4 });
         }
 
