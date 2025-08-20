@@ -589,7 +589,7 @@
                 <div class="stat-label">Total SRV Staked</div>
             </div>
             <div class="stat-card">
-                <div class="stat-number" id="aprDisplay">...%</div>
+                <div class="stat-number" id="aprDisplay">5%</div>
                 <div class="stat-label">Live APR Rate</div>
             </div>
             <div class="stat-card">
@@ -656,7 +656,7 @@
                     </div>
                     
                     <div class="apr-display">
-                        <div class="apr-rate" id="currentAPR">...% APR</div>
+                        <div class="apr-rate" id="currentAPR">5% APR</div>
                         <div class="apr-label">Current Annual Percentage Rate</div>
                     </div>
 
@@ -1083,15 +1083,36 @@
 
         // Load data that is not user-specific
         async function loadGlobalData() {
-            if (!rewardsContract || !srevContract) return;
+            if (!srevContract) return;
             try {
-                const baseAPR = await rewardsContract.methods.baseAPR().call();
-                const formattedAPR = (parseInt(baseAPR) / 100).toFixed(2) + '%';
+                // Hardcoded APR
+                const formattedAPR = '5.00%';
                 document.getElementById('aprDisplay').textContent = formattedAPR;
                 document.getElementById('currentAPR').textContent = formattedAPR + ' APR';
 
                 const srevTotalSupply = await srevContract.methods.totalSupply().call();
                 document.getElementById('totalStaked').textContent = formatTokenAmount(srevTotalSupply, srvDecimals) + ' SRV';
+
+                // Load SRV Token Features
+                if (srvContract) {
+                    const [isReflection, totalFees, feeStructure, maxSupply, treasury] = await Promise.all([
+                        srvContract.methods.isReflectionToken().call(),
+                        srvContract.methods.totalFees().call(),
+                        srvContract.methods.fees().call(),
+                        srvContract.methods.maxSupply().call(),
+                        srvContract.methods.treasury().call()
+                    ]);
+
+                    document.getElementById('isReflectionToken').textContent = isReflection ? 'Yes' : 'No';
+                    document.getElementById('totalFeesCollected').textContent = formatTokenAmount(totalFees, srvDecimals);
+                    document.getElementById('transferFee').textContent = (parseInt(feeStructure.transferFee.percentage) / 100).toFixed(2) + '%';
+                    document.getElementById('burnFee').textContent = (parseInt(feeStructure.burn.percentage) / 100).toFixed(2) + '%';
+                    document.getElementById('reflectionFee').textContent = (parseInt(feeStructure.reflection.percentage) / 100).toFixed(2) + '%';
+                    document.getElementById('buybackFee').textContent = (parseInt(feeStructure.buyback.percentage) / 100).toFixed(2) + '%';
+                    document.getElementById('maxSupply').textContent = formatTokenAmount(maxSupply, srvDecimals);
+                    document.getElementById('treasuryAddress').textContent = treasury.substring(0, 10) + '...';
+                }
+
             } catch (error) {
                 console.error("Error loading global data:", error);
                 showError("Could not load protocol data.");
@@ -1140,7 +1161,7 @@
             }
         }
         
-        // NEW: Check token allowance and update UI
+        // Check token allowance and update UI
         async function checkAllowance() {
             if (!userAccount || !srvContract) return;
 
@@ -1357,7 +1378,7 @@
             const fieldsToReset = {
                 'srvBalance': '0', 'stakedAmount': '0', 'userStaked': '0',
                 'rewardPoolBalance': '$0.00', 'pendingRewards': '$0.00', 'rewardPoolStat': '$0',
-                'aprDisplay': '...%', 'currentAPR': '...% APR',
+                'aprDisplay': '5%', 'currentAPR': '5% APR',
                 'srevUserBalance': '0', 'srevSupply': '0', 'srevTokenName': 'Loading...',
                 'srevTokenSymbol': 'Loading...', 'isReflectionToken': 'Loading...', 'totalFeesCollected': '0',
                 'transferFee': '0.00%', 'burnFee': '0.00%', 'reflectionFee': '0.00%', 'buybackFee': '0.00%',
