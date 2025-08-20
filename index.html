@@ -1083,41 +1083,62 @@
 
         // Load data that is not user-specific
         async function loadGlobalData() {
-            if (!srevContract) return;
-            try {
-                // Hardcoded APR
-                const formattedAPR = '5.00%';
-                document.getElementById('aprDisplay').textContent = formattedAPR;
-                document.getElementById('currentAPR').textContent = formattedAPR + ' APR';
+            // Set hardcoded APR first, as it needs no contract interaction
+            const formattedAPR = '5.00%';
+            document.getElementById('aprDisplay').textContent = formattedAPR;
+            document.getElementById('currentAPR').textContent = formattedAPR + ' APR';
 
+            // Fetch data that depends on contracts
+            if (!srevContract || !srvContract || !rewardsContract) {
+                console.error("Contracts not initialized for loading global data.");
+                return;
+            }
+
+            try {
+                // Fetch total staked from SREV contract
                 const srevTotalSupply = await srevContract.methods.totalSupply().call();
                 document.getElementById('totalStaked').textContent = formatTokenAmount(srevTotalSupply, srvDecimals) + ' SRV';
-
-                // Load SRV Token Features
-                if (srvContract) {
-                    const [isReflection, totalFees, feeStructure, maxSupply, treasury] = await Promise.all([
-                        srvContract.methods.isReflectionToken().call(),
-                        srvContract.methods.totalFees().call(),
-                        srvContract.methods.fees().call(),
-                        srvContract.methods.maxSupply().call(),
-                        srvContract.methods.treasury().call()
-                    ]);
-
-                    document.getElementById('isReflectionToken').textContent = isReflection ? 'Yes' : 'No';
-                    document.getElementById('totalFeesCollected').textContent = formatTokenAmount(totalFees, srvDecimals);
-                    document.getElementById('transferFee').textContent = (parseInt(feeStructure.transferFee.percentage) / 100).toFixed(2) + '%';
-                    document.getElementById('burnFee').textContent = (parseInt(feeStructure.burn.percentage) / 100).toFixed(2) + '%';
-                    document.getElementById('reflectionFee').textContent = (parseInt(feeStructure.reflection.percentage) / 100).toFixed(2) + '%';
-                    document.getElementById('buybackFee').textContent = (parseInt(feeStructure.buyback.percentage) / 100).toFixed(2) + '%';
-                    document.getElementById('maxSupply').textContent = formatTokenAmount(maxSupply, srvDecimals);
-                    document.getElementById('treasuryAddress').textContent = treasury.substring(0, 10) + '...';
-                }
-
             } catch (error) {
-                console.error("Error loading global data:", error);
-                showError("Could not load protocol data.");
+                console.error("Error loading total staked:", error);
+                document.getElementById('totalStaked').textContent = 'Error';
+            }
+
+            try {
+                // Fetch SRV Token Features
+                const [isReflection, totalFees, feeStructure, maxSupply, treasury] = await Promise.all([
+                    srvContract.methods.isReflectionToken().call(),
+                    srvContract.methods.totalFees().call(),
+                    srvContract.methods.fees().call(),
+                    srvContract.methods.maxSupply().call(),
+                    srvContract.methods.treasury().call()
+                ]);
+
+                document.getElementById('isReflectionToken').textContent = isReflection ? 'Yes' : 'No';
+                document.getElementById('totalFeesCollected').textContent = formatTokenAmount(totalFees, srvDecimals);
+                document.getElementById('transferFee').textContent = (parseInt(feeStructure.transferFee.percentage) / 100).toFixed(2) + '%';
+                document.getElementById('burnFee').textContent = (parseInt(feeStructure.burn.percentage) / 100).toFixed(2) + '%';
+                document.getElementById('reflectionFee').textContent = (parseInt(feeStructure.reflection.percentage) / 100).toFixed(2) + '%';
+                document.getElementById('buybackFee').textContent = (parseInt(feeStructure.buyback.percentage) / 100).toFixed(2) + '%';
+                document.getElementById('maxSupply').textContent = formatTokenAmount(maxSupply, srvDecimals);
+                document.getElementById('treasuryAddress').textContent = treasury.substring(0, 10) + '...';
+            } catch (error) {
+                console.error("Error loading SRV token features:", error);
+                document.getElementById('isReflectionToken').textContent = 'Error';
+            }
+
+            try {
+                // Fetch reward pool balance from Rewards contract
+                const rewardPoolBalance = await rewardsContract.methods.viewRewardPoolBalance().call();
+                const formattedPoolBalance = '$' + formatTokenAmount(rewardPoolBalance, rewardTokenDecimals);
+                document.getElementById('rewardPoolStat').textContent = formattedPoolBalance;
+                document.getElementById('rewardPoolBalance').textContent = formattedPoolBalance;
+            } catch (error) {
+                console.error("Error loading reward pool balance:", error);
+                document.getElementById('rewardPoolStat').textContent = '$ Error';
+                document.getElementById('rewardPoolBalance').textContent = '$ Error';
             }
         }
+
 
         // Load user-specific data
         async function loadUserData() {
