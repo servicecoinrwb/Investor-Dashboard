@@ -106,24 +106,6 @@
             margin: 0 auto;
         }
 
-        .connection-status {
-            text-align: center;
-            padding: 20px;
-            background: rgba(255, 255, 255, 0.9);
-            border-radius: 15px;
-            margin-bottom: 30px;
-        }
-
-        .connection-status.connected {
-            background: linear-gradient(135deg, #27AE60, #2ECC71);
-            color: white;
-        }
-
-        .connection-status.disconnected {
-            background: linear-gradient(135deg, #E74C3C, #EC7063);
-            color: white;
-        }
-
         .stats-banner {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -450,27 +432,12 @@
             color: #2C3E50;
         }
 
-        .contract-info {
-            background: rgba(52, 152, 219, 0.1);
-            border: 1px solid #3498DB;
-            border-radius: 10px;
-            padding: 15px;
-            margin-bottom: 20px;
-        }
-
-        .contract-address {
-            font-family: 'Courier New', monospace;
-            font-size: 0.9rem;
-            word-break: break-all;
-            color: #2C3E50;
-        }
-
         .error-message {
             background: #E74C3C;
             color: white;
             padding: 15px;
             border-radius: 10px;
-            margin-bottom: 20px;
+            margin-top: 20px;
             display: none;
         }
 
@@ -479,7 +446,7 @@
             color: white;
             padding: 15px;
             border-radius: 10px;
-            margin-bottom: 20px;
+            margin-top: 20px;
             display: none;
         }
 
@@ -539,11 +506,6 @@
             .staking-controls {
                 grid-template-columns: 1fr;
             }
-            
-            .contract-info > div {
-                grid-template-columns: 1fr !important;
-                gap: 10px;
-            }
         }
 
         .icon {
@@ -576,11 +538,8 @@
                 <div style="color: #27AE60; font-weight: 600; margin-bottom: 5px;">🟢 Live on Blockchain</div>
                 <div style="color: #2C3E50; font-size: 0.9rem;">Connected to deployed Service Revenue contracts. All transactions are real and recorded on the blockchain.</div>
             </div>
-        </div>
-
-        <div id="connectionStatus" class="connection-status disconnected">
-            <h3>🔌 Wallet Not Connected</h3>
-            <p>Please connect your wallet to access the staking features</p>
+            <div class="error-message" id="errorMessage"></div>
+            <div class="success-message" id="successMessage"></div>
         </div>
 
         <div class="stats-banner">
@@ -612,30 +571,6 @@
 
         <div class="main-grid">
             <div class="main-content">
-
-                <div class="contract-info">
-                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px;">
-                        <div>
-                            <strong>🔒 Staking Contract:</strong>
-                            <div class="contract-address" id="stakingContractAddress">Loading...</div>
-                        </div>
-                        <div>
-                            <strong>🎯 SREV Token:</strong>
-                            <div class="contract-address" id="srevContractAddress">Loading...</div>
-                        </div>
-                        <div>
-                            <strong>💰 Rewards Contract:</strong>
-                            <div class="contract-address" id="rewardsContractDisplayAddress">Loading...</div>
-                        </div>
-                    </div>
-                    <div style="text-align: center; margin-top: 10px; font-size: 0.85rem; color: #7F8C8D;">
-                        ✅ All contracts are deployed and verified on the blockchain
-                    </div>
-                </div>
-
-                <div class="error-message" id="errorMessage"></div>
-                <div class="success-message" id="successMessage"></div>
-
                 <div class="balance-section">
                     <div class="balance-card">
                         <div class="balance-amount" id="srvBalance">0</div>
@@ -998,10 +933,6 @@
             } else {
                 showError('Please install MetaMask to use this application.');
             }
-            
-            document.getElementById('stakingContractAddress').textContent = STAKING_CONTRACT_ADDRESS;
-            document.getElementById('srevContractAddress').textContent = SREV_TOKEN_ADDRESS;
-            document.getElementById('rewardsContractDisplayAddress').textContent = REWARDS_CONTRACT_ADDRESS;
         }
 
         // Connect wallet
@@ -1049,16 +980,12 @@
         // Update connection status UI
         async function updateConnectionStatus(connected) {
             const connectBtn = document.getElementById('connectWallet');
-            const connectionStatus = document.getElementById('connectionStatus');
             const walletInfo = document.getElementById('walletInfo');
             
             if (connected && userAccount) {
                 connectBtn.textContent = 'Disconnect';
                 connectBtn.className = 'wallet-connect';
                 connectBtn.onclick = disconnectWallet;
-                
-                connectionStatus.className = 'connection-status connected';
-                connectionStatus.innerHTML = '<h3>✅ Wallet Connected</h3><p>You can now stake and manage your SRV tokens</p>';
                 
                 walletInfo.style.display = 'block';
                 document.getElementById('walletAddress').textContent = userAccount;
@@ -1072,9 +999,6 @@
                 connectBtn.textContent = 'Connect Wallet';
                 connectBtn.className = 'wallet-connect disconnected';
                 connectBtn.onclick = connectWallet;
-                
-                connectionStatus.className = 'connection-status disconnected';
-                connectionStatus.innerHTML = '<h3>🔌 Wallet Not Connected</h3><p>Please connect your wallet to access staking features</p>';
                 
                 walletInfo.style.display = 'none';
                 resetUI();
